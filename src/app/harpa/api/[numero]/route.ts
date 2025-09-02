@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+// A assinatura da função GET foi atualizada para corresponder ao padrão do Next.js
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { numero: string } }
 ) {
   const numero = params.numero;
@@ -9,12 +10,10 @@ export async function GET(
 
   try {
     const response = await fetch(externalApiUrl, {
-      // Forçar o recarregamento dos dados e não usar o cache
       cache: 'no-store' 
     });
 
     if (!response.ok) {
-      // Se a API externa der erro, nós repassamos o erro
       return NextResponse.json({ error: 'Falha ao buscar o hino na API externa' }, { status: response.status });
     }
 
