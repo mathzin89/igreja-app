@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HomeIcon from '@mui/icons-material/Home';
 
-// --- AQUI ESTÁ A CORREÇÃO: Usando export default ---
 export default function PaginaApresentacaoHino() {
   const params = useParams();
   const numeroHino = params?.numero as string;
@@ -22,16 +21,32 @@ export default function PaginaApresentacaoHino() {
     setLoading(true);
     setError(null);
     try {
-      // Usando a sua própria API interna
       const response = await fetch(`/harpa/api/${numeroHino}`);
       if (!response.ok) {
         throw new Error('Hino não encontrado ou erro na API.');
       }
       const data = await response.json();
-      setHino(data);
-      setEstrofeAtual(0); // Reinicia para a primeira estrofe ao carregar um novo hino
+
+      // --- CORREÇÃO PRINCIPAL AQUI: Limpar e validar estrofes ---
+      if (data && Array.isArray(data.estrofes)) {
+        const estrofesLimpas = data.estrofes
+          .map((s: any) => typeof s === 'string' ? s.trim() : String(s).trim()) // Garante string e remove espaços
+          .filter((s: string) => s.length > 0); // Remove estrofes vazias após o trim
+
+        if (estrofesLimpas.length === 0) {
+          throw new Error('Hino encontrado, mas sem estrofes válidas para exibir.');
+        }
+
+        setHino({ ...data, estrofes: estrofesLimpas });
+        setEstrofeAtual(0); // Reinicia para a primeira estrofe
+      } else {
+        throw new Error('Formato das estrofes inválido ou ausente.');
+      }
+      // --- FIM DA CORREÇÃO PRINCIPAL ---
+
     } catch (err: any) {
-      setError(err.message);
+      console.error("Erro ao carregar hino para apresentação:", err);
+      setError(err.message || "Erro desconhecido ao carregar o hino.");
       setHino(null);
     } finally {
       setLoading(false);
@@ -55,16 +70,22 @@ export default function PaginaApresentacaoHino() {
   };
 
   const voltarParaHome = () => {
-    window.close(); // Tenta fechar a aba
+    if (window.opener) {
+        window.close();
+    } else {
+        window.location.href = '/harpa'; // Fallback se não conseguir fechar a aba
+    }
   };
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'ArrowRight' || event.key === ' ') { // Seta direita ou barra de espaço
+    if (event.key === 'ArrowRight' || event.key === ' ') {
       irParaProximaEstrofe();
-    } else if (event.key === 'ArrowLeft') { // Seta esquerda
+    } else if (event.key === 'ArrowLeft') {
       irParaEstrofeAnterior();
+    } else if (event.key === 'Escape') {
+      voltarParaHome();
     }
-  }, [irParaProximaEstrofe, irParaEstrofeAnterior]);
+  }, [irParaProximaEstrofe, irParaEstrofeAnterior, voltarParaHome]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -73,11 +94,11 @@ export default function PaginaApresentacaoHino() {
     };
   }, [handleKeyDown]);
 
-
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: 'black', color: 'white' }}>
         <Typography variant="h5">Carregando Hino {numeroHino}...</Typography>
+        <CircularProgress sx={{ mt: 2, color: 'white' }} />
       </Box>
     );
   }
@@ -92,16 +113,16 @@ export default function PaginaApresentacaoHino() {
     );
   }
 
-  if (!hino) {
+  if (!hino || !hino.estrofes || hino.estrofes.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: 'black', color: 'white' }}>
-        <Typography variant="h5">Hino {numeroHino} não encontrado.</Typography>
+        <Typography variant="h5">Hino {numeroHino} não encontrado ou sem estrofes válidas para exibir.</Typography>
         <Button onClick={voltarParaHome} variant="contained" sx={{ mt: 3 }}>Voltar</Button>
       </Box>
     );
   }
 
-  const estrofeParaExibir = hino.estrofes[estrofeAtual];
+  const estrofeParaExibir = hino.estrofes[estrofeAtual] || ''; // Garante que é uma string vazia se undefined
 
   return (
     <Box
@@ -133,7 +154,7 @@ export default function PaginaApresentacaoHino() {
           variant="h4"
           component="pre"
           sx={{
-            whiteSpace: 'pre-wrap',
+            whiteSpace: 'pre-wrap', // Permite quebras de linha
             textAlign: 'center',
             lineHeight: 1.5,
             maxWidth: '90%',
@@ -156,7 +177,7 @@ export default function PaginaApresentacaoHino() {
         <Button
           variant="contained"
           onClick={irParaProximaEstrofe}
-          disabled={estrofeAtual === hino.estrofes.length - 1}
+          disabled={estrofeAtual >= hino.estrofes.length - 1} {/* Fix: Use >= to prevent going past the last element */}
           endIcon={<ArrowForwardIcon />}
         >
           Próxima
