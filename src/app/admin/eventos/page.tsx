@@ -5,9 +5,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from '../../../firebase/config';
 // Imports do Material-UI
+import Grid from "@mui/material/Grid"; // ✅ Import correto do Grid
 import {
   Box, Typography, Button, Paper, TextField, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, Grid, CircularProgress, Card, CardContent, CardActions
+  DialogContent, DialogActions, CircularProgress, Card, CardContent, CardActions
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
