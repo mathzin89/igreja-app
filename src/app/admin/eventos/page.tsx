@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../../../firebase/config";
 // MUI
-import Grid from "@mui/material/Grid"; // ✅ Grid clássico (compatível com MUI 5)
+import Grid from "@mui/material/Grid"; // ✅ Import correto do Grid no MUI v5
 import {
   Box,
   Typography,
@@ -125,7 +125,7 @@ export default function PaginaEventos() {
       ) : (
         <Grid container spacing={3}>
           {eventos.map((evento) => (
-            <Grid item xs={12} sm={6} md={4} key={evento.id}>
+            <Grid key={evento.id} item xs={12} sm={6} md={4}>
               <Card
                 elevation={3}
                 sx={{ height: "100%", display: "flex", flexDirection: "column" }}
