@@ -1,0 +1,188 @@
+.page-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.page-container h1 {
+  font-family: var(--font-merriweather), serif;
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  color: #1c3d5a;
+  margin-bottom: 2.5rem; /* Aumenta o espaço abaixo do título */
+}
+
+/* REFINAMENTO: Painel com sombra mais suave e bordas mais arredondadas */
+.worship-panel {
+  background-color: #fff;
+  border-radius: 16px; /* Bordas mais suaves */
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07); /* Sombra mais profissional */
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid #e9ecef; /* Borda sutil */
+}
+
+/* REFINAMENTO: Abas com estilo de 'pílula' mais moderno */
+.tab-buttons {
+  display: flex;
+  background-color: #f8f9fa; /* Fundo um pouco mais escuro para contraste */
+  padding: 0.5rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.tab-buttons button {
+  flex: 1;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700; /* Fonte mais forte */
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: #495057; /* Cor do texto inativo */
+  border-radius: 8px; /* Bordas arredondadas */
+  transition: all 0.3s ease;
+}
+
+/* A aba ativa agora tem um fundo branco e sombra, destacando-se */
+.tab-buttons button.active {
+  color: #007bff;
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.tab-content {
+  padding: 2.5rem;
+}
+
+/* --- ESTILOS REFINADOS PARA O NAVEGADOR DA BÍBLIA --- */
+
+.bible-navigation-container {
+  width: 100%;
+  text-align: center;
+}
+
+/* Títulos dos testamentos e do livro selecionado */
+.bible-navigation-container h2 {
+  font-family: var(--font-merriweather), serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #343a40;
+  padding-bottom: 0.75rem;
+}
+
+.bible-navigation-container p {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-top: 0;
+  margin-bottom: 2rem;
+}
+
+/* Grid de Livros */
+.bible-book-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 2rem; /* Espaço extra antes do próximo título */
+}
+
+/* NOVO: Estilo mais suave para os botões dos livros */
+.book-button {
+  padding: 0.6rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.book-button:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+  transform: translateY(-2px);
+}
+
+/* Grid de Capítulos */
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 1rem; /* Mais espaçamento */
+  max-width: 100%;
+}
+
+/* Botões de Capítulo */
+.chapter-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  width: 60px;
+  background-color: #f8f9fa; /* Fundo cinza claro */
+  border: 1px solid #dee2e6; /* Borda sutil */
+  border-radius: 12px; /* Bordas suavemente quadradas */
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #495057;
+  transition: all 0.2s ease-in-out;
+  margin: 0 auto;
+}
+
+.chapter-link:hover {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+}
+
+/* Botão "Voltar" */
+.back-button {
+  display: inline-block;
+  margin-bottom: 2rem;
+  padding: 0.5rem 1rem;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #495057;
+}
+/* --- NOVO: Estilo para a Grade de Versículos --- */
+.verse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 0.75rem;
+  max-width: 100%;
+}
+
+.verse-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+  width: 50px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 1rem;
+  color: #495057;
+  transition: all 0.2s ease-in-out;
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+.verse-button:hover {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+  transform: scale(1.1);
+}
