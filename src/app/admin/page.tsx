@@ -15,7 +15,7 @@ import EditIcon from '@mui/icons-material/Edit'; // Ícone de edição
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const estadoInicialFormulario = {
-    nome: '', foto: null, endereco: '', numero: '', complemento: '', bairro: '',
+    nome: '', foto: '', endereco: '', numero: '', complemento: '', bairro: '',
     cidade: '', estado: '', cep: '', rg: '', cpf: '', dataNascimento: '',
     estadoCivil: '', tel: '', celular: '', filiacaoMae: '', filiacaoPai: '',
     batizadoEspiritoSanto: 'Nao', batismoAguasData: '', cargo: '', recebidoMinisterioData: '',
