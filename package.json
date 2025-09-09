@@ -1,11 +1,14 @@
 {
+  "homepage":"https://https://github.com/mathzin89/igreja-app",
   "name": "igreja-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "predeploy": "npm run build",
+    "deploy":"gh-pages -d dist"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

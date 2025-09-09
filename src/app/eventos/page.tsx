@@ -1,4 +1,5 @@
-import { Container, Typography, Box, Grid, Card, CardContent, CardMedia, CardActions, Button } from '@mui/material';
+import { Container, Typography, Box, Card, CardContent, CardMedia, CardActions, Button } from '@mui/material';
+import Grid from "@mui/material/Unstable_Grid2";
 import { fetchEvents } from '@/lib/events';
 import { ChurchEvent } from '@/types/event';
 import EventIcon from '@mui/icons-material/Event';
@@ -43,10 +44,8 @@ export default async function EventosPage() {
         {upcomingEvents.length > 0 ? (
           <Grid container spacing={4}>
             {upcomingEvents.map((evento: ChurchEvent) => (
-              <Grid item key={evento.id} xs={12} sm={6} md={4}>
+              <Grid key={evento.id} xs={12} sm={6} md={4}>
                 <Card className="event-card">
-                  
-                  {/* === LÓGICA PRINCIPAL AQUI === */}
                   {/* Se o evento TIVER uma imagem, mostre a imagem */}
                   {evento.imageUrl ? (
                     <CardMedia
@@ -69,7 +68,12 @@ export default async function EventosPage() {
                         padding: 2,
                       }}
                     >
-                      <Typography variant="h4" component="h2" textAlign="center" sx={{ fontFamily: 'var(--font-merriweather)', textShadow: '1px 1px 4px rgba(0,0,0,0.4)'}}>
+                      <Typography 
+                        variant="h4" 
+                        component="h2" 
+                        textAlign="center" 
+                        sx={{ fontFamily: 'var(--font-merriweather)', textShadow: '1px 1px 4px rgba(0,0,0,0.4)'}}
+                      >
                         {evento.titulo}
                       </Typography>
                     </Box>
