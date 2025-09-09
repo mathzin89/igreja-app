@@ -18,7 +18,7 @@ export default function BiblePresentationClient({ book, chapterNumber }: Props) 
   const verses = book?.capitulos[chapterIndex] || [];
   
   // Pega o versículo inicial da URL ou começa do 0
-  const initialVerseIndex = parseInt(searchParams.get('versiculo') || '1', 10) - 1;
+  const initialVerseIndex = parseInt(searchParams?.get('versiculo') || '1', 10) - 1;
 
   const [currentVerseIndex, setCurrentVerseIndex] = useState(
     // Garante que o versículo inicial seja válido
