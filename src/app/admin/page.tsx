@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   collection,
@@ -9,6 +8,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
+import { AuthProvider } from '@/firebase/AuthContext'; // Caminho correto, relativo à pasta
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../../firebase/config";
 import {
@@ -405,7 +405,7 @@ export default function PaginaMembros() {
           </Paper>
         </Box>
       )}
-      
+
       {/* MODAL DE ADIÇÃO */}
       <Dialog
         open={isAddModalOpen}
