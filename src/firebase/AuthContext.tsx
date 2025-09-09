@@ -1,4 +1,3 @@
-// src/firebase/AuthContext.tsx
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -7,7 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 
 interface UserProfile {
-  email: string;
+  email: string;  // Remover o ponto e vírgula extra
   nome: string;
   role: 'pastor_presidente' | 'dirigente';
   igrejaId: string;

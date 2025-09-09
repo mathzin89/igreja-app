@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'; // useRef e useCallback foram removidos
 import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where, getDoc } from "firebase/firestore";
 import { db } from '../../../firebase/config';
-import { useAuth } from '../../../firebase/AuthContext';
+import { useAuth } from '../../../firebase/AuthContext'; // Certifique-se de que o caminho está correto
 import {
     Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, TextField, IconButton, Dialog, DialogTitle,
