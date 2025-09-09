@@ -82,7 +82,7 @@ export default function PaginaMembros() {
     }
   };
   
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; /* @ts-ignore */ setNovoMembro(prev => ({ ...prev, foto: file })); setNomeArquivoFoto(file.name); }};
+  //const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const file = e.target.files[0]; /* @ts-ignore */ setNovoMembro(prev => ({ ...prev, foto: file })); setNomeArquivoFoto(file.name); }};
   const handleSalvarMembro = async () => { if (!novoMembro.nome.trim()) { alert('O nome do membro é obrigatório!'); return; } try { const { foto, ...dadosParaSalvar } = novoMembro; await addDoc(collection(db, "membros"), dadosParaSalvar); alert(`Membro "${dadosParaSalvar.nome}" adicionado com sucesso!`); handleAddClose(); fetchMembros(); } catch (e) { console.error("Erro ao adicionar documento: ", e); }};
 
   // Funções para o modal de Visualizar
@@ -180,7 +180,6 @@ export default function PaginaMembros() {
         <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={9}><TextField name="nome" label="Nome Completo" fullWidth variant="outlined" value={novoMembro.nome} onChange={handleChange} /></Grid>
-              <Grid item xs={12} sm={3}><Button variant="outlined" component="label" fullWidth sx={{height: '100%'}}>Carregar Foto<input type="file" hidden accept="image/*" onChange={handleFotoChange} /></Button>{nomeArquivoFoto && <Typography variant="caption">{nomeArquivoFoto}</Typography>}</Grid>
               <Grid item xs={12} sm={8}><TextField name="endereco" label="Endereço (Rua, Av.)" fullWidth variant="outlined" value={novoMembro.endereco} onChange={handleChange} /></Grid>
               <Grid item xs={12} sm={4}><TextField name="numero" label="Número" fullWidth variant="outlined" value={novoMembro.numero} onChange={handleChange} /></Grid>
               <Grid item xs={12} sm={6}><TextField name="complemento" label="Complemento" fullWidth variant="outlined" value={novoMembro.complemento} onChange={handleChange} /></Grid>

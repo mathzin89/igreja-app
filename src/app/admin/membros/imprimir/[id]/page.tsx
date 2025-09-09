@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, getDocs, doc, updateDoc } from "firebase/firestore";
-import { db } from '../../firebase/config';
+import { db, storage } from '../../../../../firebase/config';
 import {
   Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Avatar, CircularProgress, Chip,
