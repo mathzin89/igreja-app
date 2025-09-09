@@ -34,7 +34,8 @@ export default function BiblePageClient({ allBooks }: Props) {
   const handleVerseClick = (verseNumber: number) => {
     if (selectedBook && selectedChapterNum) {
       // Abre a apresentação em uma nova aba, começando no versículo correto
-      const path = `/biblia/${selectedBook.slug}/${selectedChapterNum}?versiculo=${verseNumber}`;
+      // CORREÇÃO APLICADA AQUI: trocado .slug por .abrev
+      const path = `/biblia/${selectedBook.abrev}/${selectedChapterNum}?versiculo=${verseNumber}`;
       window.open(path, '_blank');
     }
   };
@@ -55,8 +56,8 @@ export default function BiblePageClient({ allBooks }: Props) {
           {verses.map((_, index) => {
             const verseNumber = index + 1;
             return (
-              <button 
-                key={verseNumber} 
+              <button
+                key={verseNumber}
                 onClick={() => handleVerseClick(verseNumber)}
                 className="verse-button"
               >
@@ -82,8 +83,8 @@ export default function BiblePageClient({ allBooks }: Props) {
           {selectedBook.capitulos.map((_, index) => {
             const chapterNumber = index + 1;
             return (
-              <button 
-                key={chapterNumber} 
+              <button
+                key={chapterNumber}
                 onClick={() => handleChapterClick(chapterNumber)}
                 className="chapter-link"
               >
@@ -103,7 +104,8 @@ export default function BiblePageClient({ allBooks }: Props) {
         <h2>Antigo Testamento</h2>
         <div className="bible-book-grid">
           {antigoTestamento.map(book => (
-            <button key={book.slug} onClick={() => handleBookClick(book)} className="book-button">
+            // CORREÇÃO APLICADA AQUI: trocado key={book.slug} por key={book.nome}
+            <button key={book.nome} onClick={() => handleBookClick(book)} className="book-button">
               {book.nome}
             </button>
           ))}
@@ -114,7 +116,8 @@ export default function BiblePageClient({ allBooks }: Props) {
         <h2>Novo Testamento</h2>
         <div className="bible-book-grid">
           {novoTestamento.map(book => (
-            <button key={book.slug} onClick={() => handleBookClick(book)} className="book-button">
+            // CORREÇÃO APLICADA AQUI: trocado key={book.slug} por key={book.nome}
+            <button key={book.nome} onClick={() => handleBookClick(book)} className="book-button">
               {book.nome}
             </button>
           ))}
