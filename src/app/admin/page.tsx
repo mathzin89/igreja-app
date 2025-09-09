@@ -1,23 +1,49 @@
-// PaginaMembros.tsx
-
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db } from '../../firebase/config';
-import { MenuItem } from "@mui/material";
-
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Avatar, CircularProgress, Chip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField,
-  FormLabel, RadioGroup, FormControlLabel, Radio, IconButton, Divider
-} from '@mui/material';
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../../firebase/config";
+import {
+  Box,
+  Typography,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Avatar,
+  CircularProgress,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  TextField,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  IconButton,
+  MenuItem,
+  Divider,
+} from "@mui/material";
 
-import EditIcon from '@mui/icons-material/Edit';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PrintIcon from '@mui/icons-material/Print';
+import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PrintIcon from "@mui/icons-material/Print";
 
 interface Membro {
   id?: string;
@@ -47,29 +73,29 @@ interface Membro {
 }
 
 const estadoInicialFormulario: Membro = {
-  nome: '',
-  foto: '',
-  endereco: '',
-  numero: '',
-  complemento: '',
-  bairro: '',
-  cidade: '',
-  estado: '',
-  cep: '',
-  rg: '',
-  cpf: '',
-  dataNascimento: '',
-  estadoCivil: '',
-  tel: '',
-  celular: '',
-  congregacao: 'Sede',
-  filiacaoMae: '',
-  filiacaoPai: '',
-  batizadoEspiritoSanto: 'Nao',
-  batismoAguasData: '',
-  cargo: '',
-  recebidoMinisterioData: '',
-  status: 'Ativo'
+  nome: "",
+  foto: "",
+  endereco: "",
+  numero: "",
+  complemento: "",
+  bairro: "",
+  cidade: "",
+  estado: "",
+  cep: "",
+  rg: "",
+  cpf: "",
+  dataNascimento: "",
+  estadoCivil: "",
+  tel: "",
+  celular: "",
+  congregacao: "Sede",
+  filiacaoMae: "",
+  filiacaoPai: "",
+  batizadoEspiritoSanto: "Nao",
+  batismoAguasData: "",
+  cargo: "",
+  recebidoMinisterioData: "",
+  status: "Ativo",
 };
 
 const DetalheCampo = ({ label, value }: { label: string; value?: string }) => (
@@ -79,7 +105,7 @@ const DetalheCampo = ({ label, value }: { label: string; value?: string }) => (
         {label.toUpperCase()}
       </Typography>
       <Typography variant="body1" sx={{ fontWeight: 500 }}>
-        {value || 'Não informado'}
+        {value || "Não informado"}
       </Typography>
     </Box>
   </Grid>
@@ -92,10 +118,19 @@ export default function PaginaMembros() {
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [novoMembro, setNovoMembro] = useState(estadoInicialFormulario);
+  const [novaFoto, setNovaFoto] = useState<File | null>(null);
+
   const [isViewModalOpen, setViewModalOpen] = useState(false);
-  const [membroSelecionado, setMembroSelecionado] = useState<Membro | null>(null);
+  const [membroSelecionado, setMembroSelecionado] = useState<Membro | null>(
+    null
+  );
+
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [membroParaEditar, setMembroParaEditar] = useState<Membro | null>(null);
+  const [membroParaEditar, setMembroParaEditar] = useState<Membro | null>(
+    null
+  );
+  const [fotoParaEditar, setFotoParaEditar] = useState<File | null>(null);
+
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const fetchMembros = useCallback(async () => {
@@ -105,7 +140,7 @@ export default function PaginaMembros() {
       const querySnapshot = await getDocs(collection(db, "membros"));
       const membrosData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...(doc.data() as Omit<Membro, 'id'>)
+        ...(doc.data() as Omit<Membro, "id">),
       })) as Membro[];
       setMembros(membrosData);
     } catch (err) {
@@ -122,9 +157,11 @@ export default function PaginaMembros() {
 
   const handleAddClickOpen = () => {
     setNovoMembro(estadoInicialFormulario);
+    setNovaFoto(null);
     setAddModalOpen(true);
   };
   const handleAddClose = () => setAddModalOpen(false);
+
   const handleViewClickOpen = (membro: Membro) => {
     setMembroSelecionado(membro);
     setViewModalOpen(true);
@@ -133,14 +170,17 @@ export default function PaginaMembros() {
     setViewModalOpen(false);
     setMembroSelecionado(null);
   };
+
   const handleEditClickOpen = (membro: Membro) => {
     setMembroParaEditar(membro);
+    setFotoParaEditar(null);
     setEditModalOpen(true);
   };
   const handleEditClose = () => {
     setEditModalOpen(false);
     setMembroParaEditar(null);
   };
+
   const handleOpenDeleteModal = (membro: Membro) => {
     setMembroSelecionado(membro);
     setDeleteModalOpen(true);
@@ -150,13 +190,21 @@ export default function PaginaMembros() {
     setMembroSelecionado(null);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     if (isEditModalOpen && membroParaEditar) {
-      setMembroParaEditar({ ...membroParaEditar, [name]: value });
+      setMembroParaEditar({ ...membroParaEditar, [name]: value } as Membro);
     } else {
       setNovoMembro((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const uploadFoto = async (file: File): Promise<string> => {
+    const storageRef = ref(storage, `membros/${Date.now()}-${file.name}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
   };
 
   const handleSalvarMembro = async () => {
@@ -165,8 +213,15 @@ export default function PaginaMembros() {
       return;
     }
     try {
-      const { id, foto, ...dadosParaSalvar } = novoMembro;
-      await addDoc(collection(db, "membros"), dadosParaSalvar);
+      let fotoURL = "";
+      if (novaFoto) {
+        fotoURL = await uploadFoto(novaFoto);
+      }
+      const { id, ...dadosParaSalvar } = novoMembro;
+      await addDoc(collection(db, "membros"), {
+        ...dadosParaSalvar,
+        foto: fotoURL,
+      });
       alert(`Membro "${dadosParaSalvar.nome}" adicionado com sucesso!`);
       handleAddClose();
       fetchMembros();
@@ -182,9 +237,16 @@ export default function PaginaMembros() {
       return;
     }
     try {
+      let fotoURL = membroParaEditar.foto;
+      if (fotoParaEditar) {
+        fotoURL = await uploadFoto(fotoParaEditar);
+      }
       const membroDocRef = doc(db, "membros", membroParaEditar.id!);
       const { id, ...dadosParaAtualizar } = membroParaEditar;
-      await updateDoc(membroDocRef, dadosParaAtualizar);
+      await updateDoc(membroDocRef, {
+        ...dadosParaAtualizar,
+        foto: fotoURL,
+      });
       alert(`Dados de "${dadosParaAtualizar.nome}" atualizados com sucesso!`);
       handleEditClose();
       fetchMembros();
@@ -211,7 +273,7 @@ export default function PaginaMembros() {
   if (loading) {
     tableContent = (
       <TableRow>
-        <TableCell colSpan={7} align="center">
+        <TableCell colSpan={8} align="center">
           <CircularProgress />
         </TableCell>
       </TableRow>
@@ -219,7 +281,7 @@ export default function PaginaMembros() {
   } else if (membros.length === 0) {
     tableContent = (
       <TableRow>
-        <TableCell colSpan={7} align="center">
+        <TableCell colSpan={8} align="center">
           Nenhum membro encontrado.
         </TableCell>
       </TableRow>
@@ -228,14 +290,17 @@ export default function PaginaMembros() {
     tableContent = membros.map((membro) => (
       <TableRow hover key={membro.id}>
         <TableCell>
-          <Avatar>{membro.nome.charAt(0)}</Avatar>
+          {membro.foto ? (
+            <Avatar src={membro.foto} />
+          ) : (
+            <Avatar>{membro.nome.charAt(0)}</Avatar>
+          )}
         </TableCell>
         <TableCell>{membro.nome}</TableCell>
         <TableCell>{membro.celular}</TableCell>
         <TableCell>{membro.cidade}</TableCell>
         <TableCell>{membro.congregacao}</TableCell>
-            <TableCell>{membro.cargo}</TableCell>
-
+        <TableCell>{membro.cargo}</TableCell>
         <TableCell>
           <Chip
             label={membro.status}
@@ -272,9 +337,22 @@ export default function PaginaMembros() {
 
   return (
     <Box sx={{ p: 3 }}>
+      <style>{`
+        @media print {
+          .non-printable { display: none !important; }
+          #ficha-impressao { width: 100%; page-break-after: always; }
+          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}</style>
+
       <Box
         className="non-printable"
-        sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
       >
         <Typography variant="h4">Membros Cadastrados</Typography>
         <Box>
@@ -287,7 +365,11 @@ export default function PaginaMembros() {
           >
             Imprimir Relatório
           </Button>
-          <Button variant="contained" color="primary" onClick={handleAddClickOpen}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddClickOpen}
+          >
             Adicionar Novo
           </Button>
         </Box>
@@ -311,9 +393,12 @@ export default function PaginaMembros() {
                     <TableCell sx={{ fontWeight: "bold" }}>Celular</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Cidade</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Congregação</TableCell>
-                        <TableCell sx={{ fontWeight: "bold" }}>Cargo</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Cargo</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }} className="non-printable">
+                    <TableCell
+                      sx={{ fontWeight: "bold" }}
+                      className="non-printable"
+                    >
                       Ações
                     </TableCell>
                   </TableRow>
@@ -326,273 +411,650 @@ export default function PaginaMembros() {
       )}
 
       {/* MODAL DE ADIÇÃO */}
-      <Dialog open={isEditModalOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
-  <DialogTitle>Editar Informações do Membro</DialogTitle>
-  <DialogContent>
-    {membroParaEditar && (
-      <Grid container spacing={2} sx={{ mt: 1 }}>
-        <Grid item xs={12} sm={9}>
-          <TextField
-            name="nome"
-            label="Nome Completo"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.nome}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormLabel component="legend">Congregação</FormLabel>
-          <RadioGroup
-            row
-            name="congregacao"
-            value={membroParaEditar.congregacao}
-            onChange={handleChange}
-          >
-            <FormControlLabel value="Sede" control={<Radio />} label="Sede" />
-            <FormControlLabel value="Primeiro de Maio" control={<Radio />} label="Primeiro de Maio" />
-          </RadioGroup>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="endereco"
-            label="Endereço (Rua, Av.)"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.endereco}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            name="numero"
-            label="Número"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.numero}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="complemento"
-            label="Complemento"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.complemento}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="bairro"
-            label="Bairro"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.bairro}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="cidade"
-            label="Cidade"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.cidade}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <TextField
-            name="estado"
-            label="Estado"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.estado}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <TextField
-            name="cep"
-            label="CEP"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.cep}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            name="rg"
-            label="RG"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.rg}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            name="cpf"
-            label="CPF"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.cpf}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            name="dataNascimento"
-            label="Data de Nascimento"
-            type="date"
-            fullWidth
-            variant="outlined"
-            InputLabelProps={{ shrink: true }}
-            value={membroParaEditar.dataNascimento}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            name="estadoCivil"
-            label="Estado Civil"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.estadoCivil}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            name="tel"
-            label="Telefone Fixo"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.tel}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField
-            name="celular"
-            label="Celular"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.celular}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Typography variant="h6" sx={{ mt: 2 }}>Filiação</Typography>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="filiacaoMae"
-            label="Nome da Mãe"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.filiacaoMae}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="filiacaoPai"
-            label="Nome do Pai"
-            fullWidth
-            variant="outlined"
-            value={membroParaEditar.filiacaoPai}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Typography variant="h6" sx={{ mt: 2 }}>Dados Ministeriais</Typography>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormLabel component="legend">Batizado no Espírito Santo?</FormLabel>
-          <RadioGroup
-            row
-            name="batizadoEspiritoSanto"
-            value={membroParaEditar.batizadoEspiritoSanto}
-            onChange={handleChange}
-          >
-            <FormControlLabel value="Sim" control={<Radio />} label="Sim" />
-            <FormControlLabel value="Nao" control={<Radio />} label="Não" />
-          </RadioGroup>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="batismoAguasData"
-            label="Data do Batismo nas Águas"
-            type="date"
-            fullWidth
-            variant="outlined"
-            InputLabelProps={{ shrink: true }}
-            value={membroParaEditar.batismoAguasData}
-            onChange={handleChange}
-          />
-        </Grid>
-<Grid item xs={12} sm={6}>
-  <TextField
-    select
-    name="cargo"
-    label="Cargo"
-    fullWidth
-    variant="outlined"
-    value={membroParaEditar.cargo}
-    onChange={handleChange}
-  >
-    <MenuItem value="Cooperador">Cooperador</MenuItem>
-    <MenuItem value="Diácono">Diácono</MenuItem>
-    <MenuItem value="Diaconisa">Diaconisa</MenuItem>
-    <MenuItem value="Missionária">Missionária</MenuItem>
-    <MenuItem value="Presbítero">Presbítero</MenuItem>
-    <MenuItem value="Evangelista">Evangelista</MenuItem>
-    <MenuItem value="Pastor">Pastor</MenuItem>
-  </TextField>
-</Grid>
+      <Dialog
+        open={isAddModalOpen}
+        onClose={handleAddClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Adicionar Novo Membro</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={9}>
+              <TextField
+                name="nome"
+                label="Nome Completo"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.nome}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Button variant="outlined" component="label" fullWidth>
+                Upload Foto
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) =>
+                    setNovaFoto(e.target.files ? e.target.files[0] : null)
+                  }
+                />
+              </Button>
+              {novaFoto && (
+                <Avatar
+                  src={URL.createObjectURL(novaFoto)}
+                  sx={{ width: 56, height: 56, mt: 1 }}
+                />
+              )}
+            </Grid>
 
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="recebidoMinisterioData"
-            label="Recebido no Ministério em"
-            type="date"
-            fullWidth
-            variant="outlined"
-            InputLabelProps={{ shrink: true }}
-            value={membroParaEditar.recebidoMinisterioData}
-            onChange={handleChange}
-          />
-        </Grid>
-      </Grid>
-    )}
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleEditClose}>Cancelar</Button>
-    <Button onClick={handleUpdateMembro} variant="contained">Salvar Alterações</Button>
-  </DialogActions>
-</Dialog>
+            <Grid item xs={12} sm={6}>
+              <FormLabel component="legend">Congregação</FormLabel>
+              <RadioGroup
+                row
+                name="congregacao"
+                value={novoMembro.congregacao}
+                onChange={handleChange}
+              >
+                <FormControlLabel value="Sede" control={<Radio />} label="Sede" />
+                <FormControlLabel value="Primeiro de Maio" control={<Radio />} label="Primeiro de Maio" />
+              </RadioGroup>
+            </Grid>
 
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                name="cargo"
+                label="Cargo"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.cargo}
+                onChange={handleChange}
+              >
+                <MenuItem value="">-- Selecionar --</MenuItem>
+                <MenuItem value="Cooperador">Cooperador</MenuItem>
+                <MenuItem value="Diácono">Diácono</MenuItem>
+                <MenuItem value="Diaconisa">Diaconisa</MenuItem>
+                <MenuItem value="Missionária">Missionária</MenuItem>
+                <MenuItem value="Presbítero">Presbítero</MenuItem>
+                <MenuItem value="Evangelista">Evangelista</MenuItem>
+                <MenuItem value="Pastor">Pastor</MenuItem>
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="endereco"
+                label="Endereço (Rua, Av.)"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.endereco}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                name="numero"
+                label="Número"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.numero}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                name="complemento"
+                label="Complemento"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.complemento}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="bairro"
+                label="Bairro"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.bairro}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="cidade"
+                label="Cidade"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.cidade}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <TextField
+                name="estado"
+                label="Estado"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.estado}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <TextField
+                name="cep"
+                label="CEP"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.cep}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="rg"
+                label="RG"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.rg}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="cpf"
+                label="CPF"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.cpf}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="dataNascimento"
+                label="Data de Nascimento"
+                type="date"
+                fullWidth
+                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+                value={novoMembro.dataNascimento}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="estadoCivil"
+                label="Estado Civil"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.estadoCivil}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="tel"
+                label="Telefone Fixo"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.tel}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="celular"
+                label="Celular"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.celular}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+              <Typography variant="h6" sx={{ mt: 1 }}>
+                Filiação
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="filiacaoMae"
+                label="Nome da Mãe"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.filiacaoMae}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="filiacaoPai"
+                label="Nome do Pai"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.filiacaoPai}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+              <Typography variant="h6" sx={{ mt: 1 }}>
+                Dados Ministeriais
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormLabel component="legend">
+                Batizado no Espírito Santo?
+              </FormLabel>
+              <RadioGroup
+                row
+                name="batizadoEspiritoSanto"
+                value={novoMembro.batizadoEspiritoSanto}
+                onChange={handleChange}
+              >
+                <FormControlLabel value="Sim" control={<Radio />} label="Sim" />
+                <FormControlLabel value="Nao" control={<Radio />} label="Não" />
+              </RadioGroup>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="batismoAguasData"
+                label="Data do Batismo nas Águas"
+                type="date"
+                fullWidth
+                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+                value={novoMembro.batismoAguasData}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="recebidoMinisterioData"
+                label="Recebido no Ministério em"
+                type="date"
+                fullWidth
+                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+                value={novoMembro.recebidoMinisterioData}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                name="status"
+                label="Status"
+                fullWidth
+                variant="outlined"
+                value={novoMembro.status}
+                onChange={handleChange}
+              >
+                <MenuItem value="Ativo">Ativo</MenuItem>
+                <MenuItem value="Inativo">Inativo</MenuItem>
+              </TextField>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAddClose}>Cancelar</Button>
+          <Button onClick={handleSalvarMembro} variant="contained">
+            Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL DE EDIÇÃO */}
+      <Dialog
+        open={isEditModalOpen}
+        onClose={handleEditClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Editar Informações do Membro</DialogTitle>
+        <DialogContent>
+          {membroParaEditar && (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={9}>
+                <TextField
+                  name="nome"
+                  label="Nome Completo"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.nome}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <Button variant="outlined" component="label" fullWidth>
+                  Alterar Foto
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={(e) =>
+                      setFotoParaEditar(
+                        e.target.files ? e.target.files[0] : null
+                      )
+                    }
+                  />
+                </Button>
+                {(fotoParaEditar || membroParaEditar.foto) && (
+                  <Avatar
+                    src={
+                      fotoParaEditar
+                        ? URL.createObjectURL(fotoParaEditar)
+                        : membroParaEditar.foto
+                    }
+                    sx={{ width: 56, height: 56, mt: 1 }}
+                  />
+                )}
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <FormLabel component="legend">Congregação</FormLabel>
+                <RadioGroup
+                  row
+                  name="congregacao"
+                  value={membroParaEditar.congregacao}
+                  onChange={handleChange}
+                >
+                  <FormControlLabel value="Sede" control={<Radio />} label="Sede" />
+                  <FormControlLabel value="Primeiro de Maio" control={<Radio />} label="Primeiro de Maio" />
+                </RadioGroup>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  name="cargo"
+                  label="Cargo"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.cargo}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="">-- Selecionar --</MenuItem>
+                  <MenuItem value="Cooperador">Cooperador</MenuItem>
+                  <MenuItem value="Diácono">Diácono</MenuItem>
+                  <MenuItem value="Diaconisa">Diaconisa</MenuItem>
+                  <MenuItem value="Missionária">Missionária</MenuItem>
+                  <MenuItem value="Presbítero">Presbítero</MenuItem>
+                  <MenuItem value="Evangelista">Evangelista</MenuItem>
+                  <MenuItem value="Pastor">Pastor</MenuItem>
+                </TextField>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  name="endereco"
+                  label="Endereço (Rua, Av.)"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.endereco}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  name="numero"
+                  label="Número"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.numero}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  name="complemento"
+                  label="Complemento"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.complemento}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="bairro"
+                  label="Bairro"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.bairro}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="cidade"
+                  label="Cidade"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.cidade}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={2}>
+                <TextField
+                  name="estado"
+                  label="Estado"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.estado}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={2}>
+                <TextField
+                  name="cep"
+                  label="CEP"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.cep}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="rg"
+                  label="RG"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.rg}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="cpf"
+                  label="CPF"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.cpf}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="dataNascimento"
+                  label="Data de Nascimento"
+                  type="date"
+                  fullWidth
+                  variant="outlined"
+                  InputLabelProps={{ shrink: true }}
+                  value={membroParaEditar.dataNascimento}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="estadoCivil"
+                  label="Estado Civil"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.estadoCivil}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="tel"
+                  label="Telefone Fixo"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.tel}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="celular"
+                  label="Celular"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.celular}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="h6" sx={{ mt: 1 }}>
+                  Filiação
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  name="filiacaoMae"
+                  label="Nome da Mãe"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.filiacaoMae}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  name="filiacaoPai"
+                  label="Nome do Pai"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.filiacaoPai}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="h6" sx={{ mt: 1 }}>
+                  Dados Ministeriais
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <FormLabel component="legend">
+                  Batizado no Espírito Santo?
+                </FormLabel>
+                <RadioGroup
+                  row
+                  name="batizadoEspiritoSanto"
+                  value={membroParaEditar.batizadoEspiritoSanto}
+                  onChange={handleChange}
+                >
+                  <FormControlLabel value="Sim" control={<Radio />} label="Sim" />
+                  <FormControlLabel value="Nao" control={<Radio />} label="Não" />
+                </RadioGroup>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  name="batismoAguasData"
+                  label="Data do Batismo nas Águas"
+                  type="date"
+                  fullWidth
+                  variant="outlined"
+                  InputLabelProps={{ shrink: true }}
+                  value={membroParaEditar.batismoAguasData}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  name="recebidoMinisterioData"
+                  label="Recebido no Ministério em"
+                  type="date"
+                  fullWidth
+                  variant="outlined"
+                  InputLabelProps={{ shrink: true }}
+                  value={membroParaEditar.recebidoMinisterioData}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  name="status"
+                  label="Status"
+                  fullWidth
+                  variant="outlined"
+                  value={membroParaEditar.status}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="Ativo">Ativo</MenuItem>
+                  <MenuItem value="Inativo">Inativo</MenuItem>
+                </TextField>
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Cancelar</Button>
+          <Button onClick={handleUpdateMembro} variant="contained">
+            Salvar Alterações
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* MODAL DE VISUALIZAÇÃO */}
-      <Dialog open={isViewModalOpen} onClose={handleViewClose} maxWidth="md" fullWidth>
+      <Dialog
+        open={isViewModalOpen}
+        onClose={handleViewClose}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
-          <Box
-            sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>Ficha do Membro</span>
             <Box>
-              <IconButton
-                onClick={() =>
-                  membroSelecionado && handleEditClickOpen(membroSelecionado)
-                }
-                className="non-printable"
-              >
-                <EditIcon />
-              </IconButton>
+              {membroSelecionado && (
+                <IconButton
+                  onClick={() => handleEditClickOpen(membroSelecionado)}
+                  className="non-printable"
+                >
+                  <EditIcon />
+                </IconButton>
+              )}
               <IconButton onClick={() => window.print()}>
                 <PrintIcon />
               </IconButton>
@@ -615,17 +1077,12 @@ export default function PaginaMembros() {
                   {membroSelecionado.nome}
                 </Typography>
               </Box>
+
               <Grid container spacing={1}>
-                <DetalheCampo
-                  label="Endereço"
-                  value={`${membroSelecionado.endereco}, ${membroSelecionado.numero}`}
-                />
+                <DetalheCampo label="Endereço" value={`${membroSelecionado.endereco}, ${membroSelecionado.numero}`} />
                 <DetalheCampo label="Complemento" value={membroSelecionado.complemento} />
                 <DetalheCampo label="Bairro" value={membroSelecionado.bairro} />
-                <DetalheCampo
-                  label="Cidade / Estado"
-                  value={`${membroSelecionado.cidade} – ${membroSelecionado.estado}`}
-                />
+                <DetalheCampo label="Cidade / Estado" value={`${membroSelecionado.cidade} – ${membroSelecionado.estado}`} />
                 <DetalheCampo label="CEP" value={membroSelecionado.cep} />
                 <DetalheCampo label="RG" value={membroSelecionado.rg} />
                 <DetalheCampo label="CPF" value={membroSelecionado.cpf} />
@@ -634,22 +1091,13 @@ export default function PaginaMembros() {
                 <DetalheCampo label="Telefone" value={membroSelecionado.tel} />
                 <DetalheCampo label="Celular" value={membroSelecionado.celular} />
                 <DetalheCampo label="Congregação" value={membroSelecionado.congregacao} />
+                <DetalheCampo label="Cargo" value={membroSelecionado.cargo} />
                 <DetalheCampo label="Status" value={membroSelecionado.status} />
                 <DetalheCampo label="Filiação (Mãe)" value={membroSelecionado.filiacaoMae} />
                 <DetalheCampo label="Filiação (Pai)" value={membroSelecionado.filiacaoPai} />
-                <DetalheCampo
-                  label="Batizado no Espírito Santo?"
-                  value={membroSelecionado.batizadoEspiritoSanto}
-                />
-                <DetalheCampo
-                  label="Data do Batismo nas Águas"
-                  value={membroSelecionado.batismoAguasData}
-                />
-                <DetalheCampo label="Cargo" value={membroSelecionado.cargo} />
-                <DetalheCampo
-                  label="Recebido no Ministério em"
-                  value={membroSelecionado.recebidoMinisterioData}
-                />
+                <DetalheCampo label="Batizado no Espírito Santo?" value={membroSelecionado.batizadoEspiritoSanto} />
+                <DetalheCampo label="Data do Batismo nas Águas" value={membroSelecionado.batismoAguasData} />
+                <DetalheCampo label="Recebido no Ministério em" value={membroSelecionado.recebidoMinisterioData} />
               </Grid>
             </div>
           )}
@@ -658,8 +1106,6 @@ export default function PaginaMembros() {
           <Button onClick={handleViewClose}>Fechar</Button>
         </DialogActions>
       </Dialog>
-
-    
 
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       {membroSelecionado && (
