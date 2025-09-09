@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { Hymn } from '@/types/hymn';
+import { Hymn } from '@/lib/hymn';
 
 // --- Componente para a Tela de Apresentação ---
 type PresentationViewProps = {
