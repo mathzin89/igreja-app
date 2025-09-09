@@ -32,8 +32,7 @@ body {
   margin-top: 2rem;
   background-color: #fff;
   border-radius: 12px;
-  box-shadow: 0 8px
- 30px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
   overflow: hidden;
   text-align: left;
 }
@@ -74,10 +73,8 @@ body {
   align-items: center;
 }
 
-
 /* === COMPONENTES DE BUSCA (Usado nas abas) === */
 
-/* Formulário de busca da Harpa */
 .search-form {
   display: flex;
   width: 100%;
@@ -104,7 +101,6 @@ body {
   color: #adb5bd;
 }
 
-/* Remove as setas do input de número */
 .search-form input[type=number]::-webkit-inner-spin-button, 
 .search-form input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none;
@@ -129,7 +125,6 @@ body {
   background-color: #0056b3;
 }
 
-/* Formulário de busca da Bíblia */
 .bible-search-form {
   display: flex;
   width: 100%;
@@ -163,9 +158,8 @@ body {
   background-color: #0056b3;
 }
 
-
 /* === PÁGINAS DE NAVEGAÇÃO DA BÍBLIA (/biblia, /biblia/*) === */
-/* (Mantido caso você queira usar a navegação direta) */
+
 .bible-container {
   max-width: 900px;
   margin: 2rem auto;
@@ -261,7 +255,6 @@ body {
   background-color: #f0f0f0;
 }
 
-
 /* === MODO DE APRESENTAÇÃO (Harpa e Bíblia) === */
 
 .presentation-page {
@@ -298,24 +291,24 @@ body {
 }
 
 .presentation-footer {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 2rem;
-    box-sizing: border-box;
-    font-size: 1rem;
-    color: #aaa;
-    font-family: var(--font-lato), sans-serif;
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2rem;
+  box-sizing: border-box;
+  font-size: 1rem;
+  color: #aaa;
+  font-family: var(--font-lato), sans-serif;
 }
 
 .presentation-title {
-    text-align: left;
+  text-align: left;
 }
 
 .presentation-counter {
-    text-align: right;
+  text-align: right;
 }
 
 .presentation-back-button {
@@ -335,4 +328,78 @@ body {
 
 .presentation-back-button:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* === ESTILOS DE IMPRESSÃO === */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+
+  /* Esconde tudo por padrão */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Mostra apenas a ficha */
+  #ficha-impressao, #ficha-impressao * {
+    visibility: visible;
+  }
+
+  /* Configura ficha */
+  #ficha-impressao {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 30px;
+    margin: 0 auto;
+    font-family: "Arial", sans-serif;
+    font-size: 12pt;
+    line-height: 1.4;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  #ficha-impressao h5,
+  #ficha-impressao h6 {
+    margin: 4px 0;
+  }
+
+  #ficha-impressao .MuiGrid-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 12pt;
+    row-gap: 8pt;
+  }
+
+  #ficha-impressao .MuiGrid-item {
+    margin-bottom: 8px;
+  }
+
+  /* Esconde elementos não imprimíveis */
+  .non-printable {
+    display: none !important;
+  }
+
+  /* Mantém cores e imagens */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Neutralizar efeitos do Dialog do MUI */
+  .MuiDialog-root, .MuiDialog-container, .MuiDialog-paper {
+    position: static !important;
+    transform: none !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
 }

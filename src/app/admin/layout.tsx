@@ -15,8 +15,6 @@ import LogoutIcon from '@mui/icons-material/Logout';
 
 const drawerWidth = 240;
 
-// --- A MUDANÇA CRUCIAL ESTÁ AQUI ---
-// Os caminhos (path) agora incluem o prefixo /admin
 const menuItems = [
   { text: 'Membros', icon: <PeopleIcon />, path: '/admin' },
   { text: 'Finanças', icon: <AttachMoneyIcon />, path: '/admin/financas' },
@@ -76,6 +74,7 @@ export default function AppLayout({
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <AppBar
+        className="non-printable" // <-- 1. CLASSE ADICIONADA AQUI
         position="fixed"
         sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px` }}
       >
@@ -89,6 +88,7 @@ export default function AppLayout({
         </Toolbar>
       </AppBar>
       <Drawer
+        className="non-printable" // <-- 2. CLASSE ADICIONADA AQUI
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -130,7 +130,7 @@ export default function AppLayout({
         </List>
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}>
-        <Toolbar />
+        <Toolbar className="non-printable" /> {/* <-- 3. CLASSE ADICIONADA AQUI */}
         {children}
       </Box>
     </Box>

@@ -29,6 +29,7 @@ interface Membro {
   estadoCivil: string;
   tel: string;
   celular: string;
+  congregacao: string;
   filiacaoMae: string;
   filiacaoPai: string;
   batizadoEspiritoSanto: string;
@@ -41,7 +42,7 @@ interface Membro {
 const estadoInicialFormulario: Membro = {
   nome: '', foto: null, endereco: '', numero: '', complemento: '', bairro: '',
   cidade: '', estado: '', cep: '', rg: '', cpf: '', dataNascimento: '',
-  estadoCivil: '', tel: '', celular: '', filiacaoMae: '', filiacaoPai: '',
+  estadoCivil: '', tel: '', celular: '',congregacao: '', filiacaoMae: '', filiacaoPai: '',
   batizadoEspiritoSanto: 'Nao', batismoAguasData: '', cargo: '', recebidoMinisterioData: '',
   status: 'Ativo'
 };
@@ -167,8 +168,9 @@ export default function PaginaMembros() {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Foto</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Nome</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Telemóvel</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Celular</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Cidade</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Congregação</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Ações</TableCell>
                 </TableRow>
@@ -183,6 +185,7 @@ export default function PaginaMembros() {
                       <TableCell>{membro.nome}</TableCell>
                       <TableCell>{membro.celular}</TableCell>
                       <TableCell>{membro.cidade}</TableCell>
+                      <TableCell>{membro.congregacao}</TableCell>
                       <TableCell>
                         <Chip label={membro.status} color={membro.status === 'Ativo' ? 'success' : 'error'} size="small" />
                       </TableCell>
