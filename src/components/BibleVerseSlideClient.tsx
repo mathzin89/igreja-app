@@ -32,7 +32,7 @@ export default function BibleVerseSlideClient({
   // Atualiza a URL com o versículo atual
   useEffect(() => {
     if (chapter && totalVerses > 0) {
-      const current = new URLSearchParams(Array.from(searchParams.entries()));
+const current = new URLSearchParams(Array.from(searchParams?.entries() || []));
       current.set('versiculo', (currentVerseIndex + 1).toString());
       router.replace(`?${current.toString()}`);
     }
