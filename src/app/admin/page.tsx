@@ -121,14 +121,10 @@ export default function PaginaMembros() {
   const [novaFoto, setNovaFoto] = useState<File | null>(null);
 
   const [isViewModalOpen, setViewModalOpen] = useState(false);
-  const [membroSelecionado, setMembroSelecionado] = useState<Membro | null>(
-    null
-  );
+  const [membroSelecionado, setMembroSelecionado] = useState<Membro | null>(null);
 
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [membroParaEditar, setMembroParaEditar] = useState<Membro | null>(
-    null
-  );
+  const [membroParaEditar, setMembroParaEditar] = useState<Membro | null>(null);
   const [fotoParaEditar, setFotoParaEditar] = useState<File | null>(null);
 
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -409,7 +405,7 @@ export default function PaginaMembros() {
           </Paper>
         </Box>
       )}
-
+      
       {/* MODAL DE ADIÇÃO */}
       <Dialog
         open={isAddModalOpen}
