@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Hymn } from '@/types/hymn';
+import { Hymn } from '@/lib/hymn';
 
 type Props = {
   hymn: Hymn | undefined;
