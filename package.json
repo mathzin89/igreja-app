@@ -1,5 +1,5 @@
 {
-  "homepage":"https://https://github.com/mathzin89/igreja-app",
+  "homepage": "https://https://github.com/mathzin89/igreja-app",
   "name": "igreja-app",
   "version": "0.1.0",
   "private": true,
@@ -8,14 +8,14 @@
     "build": "next build --turbopack",
     "start": "next start",
     "predeploy": "npm run build",
-    "deploy":"gh-pages -d dist"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.2",
-    "@mui/material": "^7.3.2",
-    "@mui/system": "^7.3.2",
+"@mui/material": "^5.15.0",
+"@mui/icons-material": "^5.15.0",
+"@mui/system": "^5.15.0",
+"@emotion/react": "^11.11.0",
+"@emotion/styled": "^11.11.0",
     "firebase": "^12.1.0",
     "next": "15.5.2",
     "react": "19.1.0",

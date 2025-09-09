@@ -1,5 +1,5 @@
 import { Container, Typography, Box, Card, CardContent, CardMedia, CardActions, Button } from '@mui/material';
-import Grid from "@mui/material/Unstable_Grid2";
+import Grid from "@mui/material/Grid";
 import { fetchEvents } from '@/lib/events';
 import { ChurchEvent } from '@/types/event';
 import EventIcon from '@mui/icons-material/Event';
