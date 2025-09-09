@@ -1,4 +1,4 @@
-import { getHymnById, getAllHymns } from '@/lib/hymns';
+import { getHymnById, getAllHymns } from '@/lib/hymn';
 import HymnPresentationClient from './HymnPresentationClient';
 
 type PageProps = {

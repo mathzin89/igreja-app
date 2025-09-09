@@ -10,6 +10,11 @@ export interface BibleBook {
   capitulos: string[][];
 }
 
+// ✅ NOVO TIPO: Para o retorno da função getFullBible
+export interface BibleBookWithSlug extends BibleBook {
+  slug: string;
+}
+
 export interface BookRef {
   nome: string;
   slug: string;
@@ -19,6 +24,9 @@ export interface BibleIndex {
   antigoTestamento: BookRef[];
   novoTestamento: BookRef[];
 }
+
+// ✅ OTIMIZAÇÃO: Variável para guardar os dados em cache
+let cachedBibleData: BibleBook[] | null = null;
 
 // --- Funções de Leitura ---
 
@@ -32,16 +40,25 @@ function normalizeSlug(name: string): string {
     .replace(/\s+/g, '');
 }
 
-// Função principal que lê o arquivo único da Bíblia
+// ✅ OTIMIZAÇÃO: Função principal agora usa cache
 async function getBibleData(): Promise<BibleBook[]> {
+  // Se os dados já estiverem em cache, retorna-os imediatamente
+  if (cachedBibleData) {
+    return cachedBibleData;
+  }
+  
+  // Se não, lê o arquivo do disco
   const filePath = path.join(process.cwd(), 'src', 'data', 'biblia.json');
   const fileContent = await fs.readFile(filePath, 'utf-8');
-  return JSON.parse(fileContent).filter((book: any) => book.id !== "0");
+  const data = JSON.parse(fileContent).filter((book: any) => book.id !== "0");
+  
+  // Guarda os dados no cache para as próximas chamadas
+  cachedBibleData = data;
+  return data;
 }
 
-// ✅ IMPORTANTE: A FUNÇÃO QUE ESTAVA FALTANDO
-// Função para retornar a Bíblia inteira (usada no Painel de Culto)
-export async function getFullBible(): Promise<BibleBook[]> {
+// ✅ CORREÇÃO DE TIPO: Retorna o novo tipo BibleBookWithSlug
+export async function getFullBible(): Promise<BibleBookWithSlug[]> {
   const allBooks = await getBibleData();
   // Adiciona o slug a cada livro para ser usado pelo cliente
   return allBooks.map(book => ({
@@ -65,8 +82,9 @@ export async function getBookList(): Promise<BibleIndex> {
   return { antigoTestamento, novoTestamento };
 }
 
-// Função para buscar um livro específico pelo slug
+// ✅ CORREÇÃO DO ERRO 404: Busca pela abreviação (abrev)
 export async function getBook(slug: string): Promise<BibleBook | undefined> {
   const allBooks = await getBibleData();
-  return allBooks.find(book => normalizeSlug(book.nome) === slug);
+  // Compara a abreviação do livro (em minúsculas) com o slug da URL
+  return allBooks.find(book => book.abrev.toLowerCase() === slug.toLowerCase());
 }
