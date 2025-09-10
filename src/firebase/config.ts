@@ -4,12 +4,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
+
 // A sua configuração web do Firebase (CORRIGIDA)
 const firebaseConfig = {
   apiKey: "AIzaSyD5DKF-MN0JyIVI0uNxqvqaKu8ozr7sWTE",
   authDomain: "site-ad-plenitude.firebaseapp.com",
   projectId: "site-ad-plenitude",
-  storageBucket: "site-ad-plenitude.appspot.com",
+  storageBucket: "site-ad-plenitude.firebasestorage.app",
   messagingSenderId: "612531878513",
   appId: "1:612531878513:web:e0a5cc939d3f68d27cb9d0",
   measurementId: "G-BQCK04DEES"

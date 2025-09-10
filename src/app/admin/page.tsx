@@ -113,6 +113,7 @@ const DetalheCampo = ({ label, value }: { label: string; value?: string }) => (
 );
 
 export default function PaginaMembros() {
+  
   const [membros, setMembros] = useState<Membro[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

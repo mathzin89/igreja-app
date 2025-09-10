@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // Usando Link do Next.js para navegação
 import { BibleBook } from '@/lib/bible';
+import { Button } from '@mui/material'; // Button importado do Material-UI
 
 type Props = {
   allBooks: BibleBook[];
+  onVerseSelect: (verse: { title: string; content: string }) => void;  // Tipagem correta da função onVerseSelect
 };
 
-export default function BiblePageClient({ allBooks }: Props) {
-  const router = useRouter();
-
-  // Estados para controlar a visualização
+export default function BiblePageClient({ allBooks, onVerseSelect }: Props) {
   const [view, setView] = useState<'books' | 'chapters' | 'verses'>('books');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
   const [selectedChapterNum, setSelectedChapterNum] = useState<number | null>(null);
@@ -33,8 +31,8 @@ export default function BiblePageClient({ allBooks }: Props) {
 
   const handleVerseClick = (verseNumber: number) => {
     if (selectedBook && selectedChapterNum) {
-      // Abre a apresentação em uma nova aba, começando no versículo correto
-      // CORREÇÃO APLICADA AQUI: trocado .slug por .abrev
+      const verse = selectedBook.capitulos[selectedChapterNum - 1][verseNumber - 1]; // Acessando o conteúdo do versículo
+      onVerseSelect({ title: verse.title, content: verse.content }); // Chamando a função onVerseSelect com os dados do versículo
       const path = `/biblia/${selectedBook.abrev}/${selectedChapterNum}?versiculo=${verseNumber}`;
       window.open(path, '_blank');
     }
@@ -47,22 +45,24 @@ export default function BiblePageClient({ allBooks }: Props) {
     const verses = selectedBook.capitulos[selectedChapterNum - 1] || [];
     return (
       <div className="bible-navigation-container">
-        <button onClick={() => setView('chapters')} className="back-button">
+        <Button onClick={() => setView('chapters')} variant="outlined" color="primary">
           &larr; Voltar para Capítulos
-        </button>
+        </Button>
         <h2>{selectedBook.nome} {selectedChapterNum}</h2>
         <p>Selecione um versículo para iniciar a apresentação:</p>
         <div className="verse-grid">
           {verses.map((_, index) => {
             const verseNumber = index + 1;
             return (
-              <button
+              <Button
                 key={verseNumber}
                 onClick={() => handleVerseClick(verseNumber)}
+                variant="contained"
+                color="secondary"
                 className="verse-button"
               >
                 {verseNumber}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -74,22 +74,24 @@ export default function BiblePageClient({ allBooks }: Props) {
   if (view === 'chapters' && selectedBook) {
     return (
       <div className="bible-navigation-container">
-        <button onClick={() => { setView('books'); setSelectedBook(null); }} className="back-button">
+        <Button onClick={() => { setView('books'); setSelectedBook(null); }} variant="outlined" color="primary">
           &larr; Voltar para a Lista de Livros
-        </button>
+        </Button>
         <h2>{selectedBook.nome}</h2>
         <p>Selecione um capítulo:</p>
         <div className="chapter-grid">
           {selectedBook.capitulos.map((_, index) => {
             const chapterNumber = index + 1;
             return (
-              <button
+              <Button
                 key={chapterNumber}
                 onClick={() => handleChapterClick(chapterNumber)}
+                variant="contained"
+                color="primary"
                 className="chapter-link"
               >
                 {chapterNumber}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -104,10 +106,15 @@ export default function BiblePageClient({ allBooks }: Props) {
         <h2>Antigo Testamento</h2>
         <div className="bible-book-grid">
           {antigoTestamento.map(book => (
-            // CORREÇÃO APLICADA AQUI: trocado key={book.slug} por key={book.nome}
-            <button key={book.nome} onClick={() => handleBookClick(book)} className="book-button">
+            <Button
+              key={book.nome}
+              onClick={() => handleBookClick(book)}
+              variant="outlined"
+              color="primary"
+              className="book-button"
+            >
               {book.nome}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -116,10 +123,15 @@ export default function BiblePageClient({ allBooks }: Props) {
         <h2>Novo Testamento</h2>
         <div className="bible-book-grid">
           {novoTestamento.map(book => (
-            // CORREÇÃO APLICADA AQUI: trocado key={book.slug} por key={book.nome}
-            <button key={book.nome} onClick={() => handleBookClick(book)} className="book-button">
+            <Button
+              key={book.nome}
+              onClick={() => handleBookClick(book)}
+              variant="outlined"
+              color="primary"
+              className="book-button"
+            >
               {book.nome}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
