@@ -330,11 +330,11 @@ const generatePdfReport = () => {
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
-  doc.setFont(undefined, 'bold');
+doc.setFont('helvetica', 'bold');
   doc.text('Assembléia de Deus Plenitude', pageWidth / 2, headerHeight / 2 + 1, { align: 'center', baseline: 'middle' });
 
   doc.setTextColor(0, 0, 0);
-  doc.setFont(undefined, 'normal');
+doc.setFont('helvetica', 'bold');
 
   // --- Título ---
   doc.setFontSize(18);
@@ -402,7 +402,7 @@ didDrawCell: function(data) {
   if (summaryY > pageHeight - 40) { doc.addPage(); summaryY = margin; }
 
   doc.setFontSize(12);
-  doc.setFont(undefined, 'normal');
+doc.setFont('helvetica', 'bold');
 
   const summaryXLabel = margin;
   const summaryXValue = pageWidth - margin;
@@ -423,7 +423,7 @@ didDrawCell: function(data) {
   doc.line(margin, summaryY, pageWidth - margin, summaryY);
   summaryY += 8;
 
-  doc.setFont(undefined, 'bold');
+doc.setFont('helvetica', 'bold');
   doc.setTextColor(50, 50, 50);
   doc.text("Saldo (Valor total que sobrou):", summaryXLabel, summaryY);
   doc.setTextColor(saldoAtualFiltrado >= 0 ? 0 : 220, saldoAtualFiltrado >= 0 ? 128 : 0, 0);
