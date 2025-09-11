@@ -11,6 +11,7 @@ import { BibleBook } from '@/lib/bible';
 interface VersePayload {
   title: string;
   content: string;
+    startIndex?: number; // ✅ Adicione esta linha. O '?' a torna opcional.
 }
 
 interface BiblePageClientProps {
@@ -39,28 +40,25 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageCl
   };
 
   // --- 2. Lógica de Seleção do Versículo Corrigida ---
-  const handleVerseClick = (verseNumber: number) => {
+const handleVerseClick = (verseNumber: number) => {
     if (selectedBook && selectedChapterNum !== null) {
+      // 1. Pega TODOS os versículos do capítulo
       const chapterVerses: string[] = selectedBook.capitulos[selectedChapterNum - 1];
-      const verseContent = chapterVerses[verseNumber - 1];
+      
+      // 2. Junta todos os versículos em uma única string, separados por '\n\n'
+      const fullChapterContent = chapterVerses
+        .map(verse => verse.substring(verse.indexOf(' ') + 1)) // Remove o "1 ", "2 ", etc. do início
+        .join('\n\n');
 
-      if (verseContent !== undefined) {
-        // ✅ CRIA o título no formato "Livro Capítulo:Versículo"
-        const title = `${selectedBook.nome} ${selectedChapterNum}:${verseNumber}`;
-
-        // ✅ ENVIA o objeto no formato correto { title, content }
-        onVerseSelect({
-          title: title,
-          content: verseContent
-        });
-        
-        // ✅ REMOVIDO: A linha window.open(...) foi retirada para
-        // manter a responsabilidade única de apenas selecionar o versículo para a playlist.
-        // const path = `/apresentacao/biblia/${selectedBook.abrev}/${selectedChapterNum}/${verseNumber}`;
-        // window.open(path, '_blank');
-      } else {
-        console.error("Versículo não encontrado para o índice fornecido.");
-      }
+      // 3. Cria o título para o CAPÍTULO
+      const chapterTitle = `${selectedBook.nome} ${selectedChapterNum}`;
+      
+      // 4. Chama a função passando o capítulo inteiro e o índice inicial
+      onVerseSelect({
+        title: chapterTitle,
+        content: fullChapterContent,
+        startIndex: verseNumber - 1 // O índice do array (ex: versículo 1 é o índice 0)
+      });
     }
   };
 

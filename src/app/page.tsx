@@ -113,7 +113,7 @@ export default function HomePage() {
         <Container maxWidth="md">
           <Box sx={{ mb: 4 }}>
             <Image
-              src="/logo-plenitude.png"
+              src="https://firebasestorage.googleapis.com/v0/b/site-ad-plenitude.firebasestorage.app/o/logo-plenitude.png?alt=media&token=1a61b486-b9a6-49ab-bfc1-56140700f9cb"
               alt="Logo AD Plenitude"
               width={300}
               height={85}

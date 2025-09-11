@@ -2,67 +2,78 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // ✅ Reimporte o useRouter
+import { useRouter } from 'next/navigation';
 
-// O useRouter não é mais necessário para esta lógica
-// import { useRouter } from 'next/navigation';
-
-// --- 1. Definições de Tipos Corrigidas ---
-// É importante que o tipo 'Hymn' aqui seja o mesmo esperado pelo componente pai
-type Hymn = {
+// --- 1. Definição de Tipos ---
+// Este é o formato que a função onHymnSelect espera
+type HymnPayload = {
   title: string;
   content: string;
 };
 
-// No arquivo HymnListPageClient.tsx
-type Props = {
-  hideTitle?: boolean;
-  onHymnSelect?: (hino: Hymn) => void; // ✅ O '?' torna a prop opcional
-};
-
-// --- 2. Função para Buscar os Dados do Hino (Exemplo) ---
-// Você precisará implementar a lógica real para buscar os dados de um arquivo, API, etc.
-// Esta é uma função de exemplo que retorna dados fictícios.
-async function fetchHymnData(id: number): Promise<Hymn | null> {
-  // LÓGICA FICTÍCIA: Substitua isso pela sua busca real
-  if (id > 0 && id <= 640) {
-    // Exemplo: Em um caso real, você poderia fazer um fetch para uma API ou ler um arquivo JSON
-    const response = await fetch(`/api/hymns/${id}`); // Exemplo de chamada a uma API
-    if (!response.ok) return null;
-    const data = await response.json(); // Espera-se que a API retorne { title, content }
-    return data;
-  }
-  return null;
+// Este é o formato que a API retorna
+interface HymnFromAPI {
+    id: number;
+    title: string;
+    estrofes: string[][];
 }
 
+type Props = {
+  hideTitle?: boolean;
+  onHymnSelect?: (hino: HymnPayload) => void;
+};
 
 export default function HymnListPageClient({ hideTitle = false, onHymnSelect }: Props) { 
   const [searchId, setSearchId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter(); // ✅ Inicialize o router
+  const router = useRouter();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const id = parseInt(searchId, 10);
-    // ... (sua validação de ID) ...
+
+    if (isNaN(id) || id <= 0 || id > 640) {
+      alert("Por favor, digite um número de hino válido (1 a 640).");
+      return;
+    }
 
     setIsLoading(true);
-    const hymnData = await fetchHymnData(id);
-    setIsLoading(false);
 
-    if (hymnData) {
-      // ✅ LÓGICA CONDICIONAL AQUI
-      if (onHymnSelect) {
-        // Se a função foi passada (estamos no painel de culto), use-a.
-        onHymnSelect(hymnData);
+    try {
+      const response = await fetch(`/api/hymns/${id}`);
+
+      if (response.ok) {
+        const data: HymnFromAPI = await response.json();
+
+        // --- 2. TRANSFORMAÇÃO DOS DADOS ---
+        // Juntamos todas as estrofes e linhas em um único parágrafo (string)
+        // para corresponder ao formato { title, content }
+        const content = data.estrofes
+          .map(estrofe => estrofe.join('\n')) // Junta as linhas de uma estrofe
+          .join('\n\n'); // Junta as estrofes com um espaço duplo
+
+        const hymnPayload: HymnPayload = {
+            title: data.title,
+            content: content
+        };
+
+        if (onHymnSelect) {
+          // Enviamos os dados já transformados para a playlist
+          onHymnSelect(hymnPayload);
+        } else {
+          router.push(`/harpa/${id}`);
+        }
+        
+        setSearchId('');
       } else {
-        // Se não (estamos na página /harpa), navegue para a página do hino.
-        router.push(`/harpa/${id}`);
+        alert(`Não foi possível encontrar o hino de número ${id}.`);
       }
-      setSearchId('');
-    } else {
-      alert(`Não foi possível encontrar o hino de número ${id}.`);
+    } catch (error) {
+      console.error("Falha ao buscar hino:", error);
+      alert("Ocorreu um erro de rede ao buscar o hino.");
     }
+
+    setIsLoading(false);
   };
 
   return (
@@ -82,7 +93,7 @@ export default function HymnListPageClient({ hideTitle = false, onHymnSelect }: 
           min="1"
           max="640"
           autoFocus
-          disabled={isLoading} // Desabilita o campo durante o carregamento
+          disabled={isLoading}
         />
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Buscando...' : 'Adicionar'}

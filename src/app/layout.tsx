@@ -67,7 +67,7 @@ export default function RootLayout({
                   <Toolbar sx={{ minHeight: '64px', py: 1 }}>
                     <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
                       <Image
-                        src="https://firebasestorage.googleapis.com/v0/b/site-ad-plenitude.appspot.com/o/logo-plenitude.png?alt=media"
+                        src="https://firebasestorage.googleapis.com/v0/b/site-ad-plenitude.firebasestorage.app/o/logo-plenitude.png?alt=media&token=1a61b486-b9a6-49ab-bfc1-56140700f9cb"
                         alt="Logo AD Plenitude"
                         width={160}
                         height={45}
