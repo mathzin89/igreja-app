@@ -1,16 +1,12 @@
-// No arquivo: src/app/api/hymns/[id]/route.ts
-
 import { NextResponse } from 'next/server';
 import { getHymnById } from '@/lib/harpa';
 
-// A interface 'Context' não é mais necessária
-
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  // Acessa o 'id' diretamente de 'params'
-  const { id } = params;
+  // Espera o parâmetro `params` ser resolvido
+  const { id } = await context.params;
   const hymnId = Number(id);
 
   // Validação para garantir que o ID é um número válido
