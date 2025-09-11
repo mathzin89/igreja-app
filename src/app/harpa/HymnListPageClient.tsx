@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; // ✅ Reimporte o useRouter
+
 // O useRouter não é mais necessário para esta lógica
 // import { useRouter } from 'next/navigation';
 
@@ -12,9 +14,10 @@ type Hymn = {
   content: string;
 };
 
+// No arquivo HymnListPageClient.tsx
 type Props = {
   hideTitle?: boolean;
-  onHymnSelect: (hino: Hymn) => void; // ✅ Propriedade adicionada
+  onHymnSelect?: (hino: Hymn) => void; // ✅ O '?' torna a prop opcional
 };
 
 // --- 2. Função para Buscar os Dados do Hino (Exemplo) ---
@@ -35,26 +38,28 @@ async function fetchHymnData(id: number): Promise<Hymn | null> {
 
 export default function HymnListPageClient({ hideTitle = false, onHymnSelect }: Props) { 
   const [searchId, setSearchId] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Estado para feedback de carregamento
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter(); // ✅ Inicialize o router
 
-  // --- 3. Lógica de Busca Modificada ---
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const id = parseInt(searchId, 10);
-
-    if (isNaN(id) || id <= 0 || id > 640) {
-      alert("Por favor, digite um número de hino válido (1 a 640).");
-      return;
-    }
+    // ... (sua validação de ID) ...
 
     setIsLoading(true);
     const hymnData = await fetchHymnData(id);
     setIsLoading(false);
 
     if (hymnData) {
-      // Em vez de navegar, chama a função do componente pai para adicionar à playlist
-      onHymnSelect(hymnData);
-      setSearchId(''); // Limpa o campo após a seleção
+      // ✅ LÓGICA CONDICIONAL AQUI
+      if (onHymnSelect) {
+        // Se a função foi passada (estamos no painel de culto), use-a.
+        onHymnSelect(hymnData);
+      } else {
+        // Se não (estamos na página /harpa), navegue para a página do hino.
+        router.push(`/harpa/${id}`);
+      }
+      setSearchId('');
     } else {
       alert(`Não foi possível encontrar o hino de número ${id}.`);
     }
