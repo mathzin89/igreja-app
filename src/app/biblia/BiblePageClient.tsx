@@ -1,22 +1,28 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link'; // Usando Link do Next.js para navegação
+import Link from 'next/link';
+import { Button } from '@mui/material';
+
+// ✅ Importe a interface BibleBook do seu arquivo de definição
 import { BibleBook } from '@/lib/bible';
-import { Button } from '@mui/material'; // Button importado do Material-UI
 
-type Props = {
+// ✅ Interface Props para este componente
+interface BiblePageClientProps {
   allBooks: BibleBook[];
-  onVerseSelect: (verse: { title: string; content: string }) => void;  // Tipagem correta da função onVerseSelect
-};
+  // O tipo de 'onVerseSelect' agora está correto, a implementação é que muda
+  onVerseSelect: (verse: { book: string; chapter: number; verse: number; content: string }) => void;
+}
 
-export default function BiblePageClient({ allBooks, onVerseSelect }: Props) {
+
+export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageClientProps) {
   const [view, setView] = useState<'books' | 'chapters' | 'verses'>('books');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
   const [selectedChapterNum, setSelectedChapterNum] = useState<number | null>(null);
 
-  const antigoTestamento = allBooks.filter(b => b.periodo.includes('Antigo'));
-  const novoTestamento = allBooks.filter(b => b.periodo.includes('Novo'));
+  const antigoTestamento = allBooks.filter(b => b.periodo?.includes('Antigo'));
+  const novoTestamento = allBooks.filter(b => b.periodo?.includes('Novo'));
+
 
   // Funções para controlar a navegação
   const handleBookClick = (book: BibleBook) => {
@@ -30,19 +36,39 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: Props) {
   };
 
   const handleVerseClick = (verseNumber: number) => {
-    if (selectedBook && selectedChapterNum) {
-      const verse = selectedBook.capitulos[selectedChapterNum - 1][verseNumber - 1]; // Acessando o conteúdo do versículo
-      onVerseSelect({ title: verse.title, content: verse.content }); // Chamando a função onVerseSelect com os dados do versículo
-      const path = `/biblia/${selectedBook.abrev}/${selectedChapterNum}?versiculo=${verseNumber}`;
-      window.open(path, '_blank');
+    if (selectedBook && selectedChapterNum !== null) {
+      // ✅ CORREÇÃO AQUI: Acessando diretamente o texto do versículo.
+      // selectedBook.capitulos[selectedChapterNum - 1] é o array de strings de versículos para o capítulo.
+      // [verseNumber - 1] é o índice do versículo dentro desse array.
+      const chapterVerses: string[] = selectedBook.capitulos[selectedChapterNum - 1];
+      const verseContent = chapterVerses[verseNumber - 1]; // Obtém a string do versículo
+
+      if (verseContent !== undefined) { // ✅ Garante que o versículo existe nesse índice
+        onVerseSelect({
+          book: selectedBook.nome, // Ou selectedBook.abrev, como você preferir
+          chapter: selectedChapterNum,
+          verse: verseNumber,
+          content: verseContent // ✅ Passa o conteúdo do versículo diretamente
+        });
+        
+        const path = `/apresentacao/biblia/${selectedBook.abrev}/${selectedChapterNum}/${verseNumber}`;
+        window.open(path, '_blank');
+      } else {
+        console.error("Versículo não encontrado para o índice fornecido.");
+      }
     }
   };
 
   // --- Renderização Condicional ---
 
   // Visualização de VERSÍCULOS
-  if (view === 'verses' && selectedBook && selectedChapterNum) {
-    const verses = selectedBook.capitulos[selectedChapterNum - 1] || [];
+  if (view === 'verses' && selectedBook && selectedChapterNum !== null) {
+    // ✅ CORREÇÃO AQUI: 'capitulos' já é um array de arrays de strings.
+    // selectedBook.capitulos[selectedChapterNum - 1] é o array de strings para o capítulo.
+    const chapterVersesStrings: string[] = selectedBook.capitulos[selectedChapterNum - 1] || [];
+    const totalVerses = chapterVersesStrings.length;
+    const verseNumbers = Array.from({ length: totalVerses }, (_, i) => i + 1); // Gerar números de 1 ao total de versículos
+
     return (
       <div className="bible-navigation-container">
         <Button onClick={() => setView('chapters')} variant="outlined" color="primary">
@@ -51,20 +77,17 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: Props) {
         <h2>{selectedBook.nome} {selectedChapterNum}</h2>
         <p>Selecione um versículo para iniciar a apresentação:</p>
         <div className="verse-grid">
-          {verses.map((_, index) => {
-            const verseNumber = index + 1;
-            return (
-              <Button
-                key={verseNumber}
-                onClick={() => handleVerseClick(verseNumber)}
-                variant="contained"
-                color="secondary"
-                className="verse-button"
-              >
-                {verseNumber}
-              </Button>
-            );
-          })}
+          {verseNumbers.map((verseNumber) => ( // ✅ Iterar sobre os números de versículos gerados
+            <Button
+              key={verseNumber}
+              onClick={() => handleVerseClick(verseNumber)}
+              variant="contained"
+              color="secondary"
+              className="verse-button"
+            >
+              {verseNumber}
+            </Button>
+          ))}
         </div>
       </div>
     );
@@ -72,6 +95,10 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: Props) {
 
   // Visualização de CAPÍTULOS
   if (view === 'chapters' && selectedBook) {
+    // ✅ CORREÇÃO AQUI: O número de capítulos é o length do array 'capitulos'
+    const totalChapters = selectedBook.capitulos.length;
+    const chapterNumbers = Array.from({ length: totalChapters }, (_, i) => i + 1);
+
     return (
       <div className="bible-navigation-container">
         <Button onClick={() => { setView('books'); setSelectedBook(null); }} variant="outlined" color="primary">
@@ -80,20 +107,17 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: Props) {
         <h2>{selectedBook.nome}</h2>
         <p>Selecione um capítulo:</p>
         <div className="chapter-grid">
-          {selectedBook.capitulos.map((_, index) => {
-            const chapterNumber = index + 1;
-            return (
-              <Button
-                key={chapterNumber}
-                onClick={() => handleChapterClick(chapterNumber)}
-                variant="contained"
-                color="primary"
-                className="chapter-link"
-              >
-                {chapterNumber}
-              </Button>
-            );
-          })}
+          {chapterNumbers.map((chapterNumber) => (
+            <Button
+              key={chapterNumber}
+              onClick={() => handleChapterClick(chapterNumber)}
+              variant="contained"
+              color="primary"
+              className="chapter-link"
+            >
+              {chapterNumber}
+            </Button>
+          ))}
         </div>
       </div>
     );

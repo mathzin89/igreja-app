@@ -1,382 +1,730 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react'; // useRef e useCallback foram removidos
-import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where, getDoc } from "firebase/firestore";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
+import { collection, query, orderBy, onSnapshot, addDoc, doc, updateDoc, deleteDoc, where, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
-import { useAuth } from '../../../firebase/AuthContext'; // Certifique-se de que o caminho está correto
+
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+
 import {
-    Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Paper, TextField, IconButton, Dialog, DialogTitle,
-    DialogContent, DialogActions, Grid, RadioGroup, FormControlLabel, Radio,
-    InputLabel, FormControl, Select, MenuItem, Avatar, CircularProgress
+  Box, Typography, Button, CircularProgress, Paper, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle, DialogContent,
+  DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, Alert,
+  Grid
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import AddIcon from '@mui/icons-material/Add';
 import PrintIcon from '@mui/icons-material/Print';
 
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-// A importação do useReactToPrint foi removida
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-interface Lancamento { id?: string; igrejaId: string; tipo: 'entrada' | 'saida'; categoria: string; descricao: string; valor: number; data: string; }
-interface UserProfile { email: string; nome: string; role: 'pastor_presidente' | 'dirigente'; igrejaId: string; }
-const igrejas = [{ id: 'sede', nome: 'Sede' }, { id: '1demaio', nome: '1º de Maio' }];
-const estadoInicialLancamento: Lancamento = { igrejaId: 'sede', tipo: 'entrada', categoria: '', descricao: '', valor: 0, data: new Date().toISOString().split('T')[0] };
-
-function RenderFormFields({ data, handler }: { data: Lancamento; handler: (e: any) => void }) {
-    // ... (O conteúdo desta função não muda)
-    return (
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-                <FormControl fullWidth>
-                    <InputLabel>Igreja</InputLabel>
-                    <Select name="igrejaId" value={data.igrejaId} label="Igreja" disabled>
-                        {igrejas.map(igreja => <MenuItem key={igreja.id} value={igreja.id}>{igreja.nome}</MenuItem>)}
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-                <FormControl>
-                    <RadioGroup row name="tipo" value={data.tipo} onChange={handler}>
-                        <FormControlLabel value="entrada" control={<Radio />} label="Entrada" />
-                        <FormControlLabel value="saida" control={<Radio />} label="Saída" />
-                    </RadioGroup>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-                <FormControl fullWidth>
-                    <InputLabel>Categoria</InputLabel>
-                    <Select name="categoria" value={data.categoria} label="Categoria" onChange={handler}>
-                        {data.tipo === 'entrada'
-                            ? [<MenuItem key="dizimo" value="Dízimo">Dízimo</MenuItem>, <MenuItem key="oferta" value="Oferta">Oferta</MenuItem>]
-                            : [<MenuItem key="aluguel" value="Aluguel">Aluguel</MenuItem>, <MenuItem key="contas" value="Contas">Contas</MenuItem>]}
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-                <TextField name="descricao" label="Descrição" fullWidth value={data.descricao} onChange={handler} />
-            </Grid>
-            <Grid item xs={6}>
-                <TextField name="valor" label="Valor" type="number" fullWidth value={data.valor} onChange={handler} />
-            </Grid>
-            <Grid item xs={6}>
-                <TextField
-                    name="data"
-                    label="Data"
-                    type="date"
-                    fullWidth
-                    value={data.data}
-                    onChange={handler}
-                    InputLabelProps={{ shrink: true }}
-                />
-            </Grid>
-        </Grid>
-    );
+interface Lancamento {
+  id?: string;
+  categoria: string;
+  data: string;
+  descricao: string;
+  igrejaId: string;
+  tipo: 'entrada' | 'saida';
+  valor: number;
+  membroId?: string;
+  membroNome?: string;
 }
 
-export default function PaginaFinancas() {
-    const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isAddModalOpen, setAddModalOpen] = useState(false);
-    const [isEditModalOpen, setEditModalOpen] = useState(false);
-    const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [novoLancamento, setNovoLancamento] = useState<Lancamento>(estadoInicialLancamento);
-    const [lancamentoParaEditar, setLancamentoParaEditar] = useState<Lancamento | null>(null);
-    const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null);
-    const { user, loading: authLoading, userProfile, setUserProfile } = useAuth();
-    const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear());
+interface Membro {
+  id: string;
+  nome: string;
+}
 
-    // Toda a lógica do react-to-print (useState, useRef, useCallback, useReactToPrint) foi removida daqui.
+interface UserProfile {
+    igrejaId: string;
+    role: string;
+}
 
-    useEffect(() => {
-        if (user && !userProfile) {
-            const fetchProfile = async () => {
-                const docSnap = await getDoc(doc(db, "users", user.uid));
-                if (docSnap.exists()) setUserProfile(docSnap.data() as UserProfile);
-            };
-            fetchProfile();
-        }
-    }, [user, userProfile, setUserProfile]);
+const COLORS = ['#00C49F', '#FF8042'];
 
-    const fetchLancamentos =
-        useMemo(() => async () => {
-            if (!userProfile) return;
-            setLoading(true);
-            try {
-                const q = query(collection(db, "financas"), where("igrejaId", "==", userProfile.igrejaId), orderBy("data", "desc"));
-                const querySnapshot = await getDocs(q);
-                setLancamentos(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Lancamento)));
-            } catch (error) {
-                console.error("Erro: ", error);
-            } finally {
-                setLoading(false);
-            }
-        }, [userProfile]);
+const CATEGORY_OPTIONS = [
+  'Dízimo',
+  'Oferta',
+  'Aluguel',
+  'Salário',
+  'Material de Limpeza',
+  'Doação',
+  'Outras Entradas',
+  'Outras Saídas',
+];
 
-    useEffect(() => {
-        fetchLancamentos();
-    }, [fetchLancamentos]);
+export default function FinancasPage() {
+  const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
+  const [membros, setMembros] = useState<Membro[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfileLoading, setUserProfileLoading] = useState(true);
 
-    const handleAddClickOpen = () => {
-        if (userProfile) {
-            setNovoLancamento({ ...estadoInicialLancamento, igrejaId: userProfile.igrejaId, data: new Date().toISOString().split('T')[0] });
-            setAddModalOpen(true);
-        }
-    };
-    const handleAddClose = () => setAddModalOpen(false);
-    const handleEditClose = () => { setEditModalOpen(false); setLancamentoParaEditar(null); };
-    const handleDeleteClose = () => { setDeleteModalOpen(false); setLancamentoSelecionado(null); };
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentLancamento, setCurrentLancamento] = useState<Lancamento | null>(null);
 
-    const handleChange = (e: React.ChangeEvent<any>) => {
-        const { name, value } = e.target;
-        const v = name === 'valor' ? parseFloat(value) || 0 : value;
-        if (isEditModalOpen) setLancamentoParaEditar(p => p ? { ...p, [name]: v } : null);
-        else setNovoLancamento(p => ({ ...p, [name]: v }));
-    };
+  const [formCategoria, setFormCategoria] = useState('');
+  const [formData, setFormData] = useState('');
+  const [formDescricao, setFormDescricao] = useState('');
+  const [formTipo, setFormTipo] = useState<'entrada' | 'saida'>('entrada');
+  const [formValor, setFormValor] = useState('');
+  const [formMembroId, setFormMembroId] = useState('');
+  const [formMembroNome, setFormMembroNome] = useState('');
 
-    const handleSalvar = async () => {
-        const lancamento = isEditModalOpen ? lancamentoParaEditar : novoLancamento;
-        if (!lancamento?.categoria || !lancamento?.descricao || !lancamento?.valor) {
-            alert("Preencha todos os campos.");
-            return;
-        }
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const [selectedMonthYear, setSelectedMonthYear] = useState<string>(currentMonth);
+
+  const resetForm = () => {
+    setCurrentLancamento(null);
+    setFormCategoria('');
+    setFormData('');
+    setFormDescricao('');
+    setFormTipo('entrada');
+    setFormValor('');
+    setFormMembroId('');
+    setFormMembroNome('');
+  };
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+
+      if (currentUser) {
+        setUserProfileLoading(true);
         try {
-            if (isEditModalOpen && lancamento.id) {
-                const { id, ...data } = lancamento;
-                await updateDoc(doc(db, "financas", id), data);
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                setUserProfile(userDocSnap.data() as UserProfile);
             } else {
-                await addDoc(collection(db, "financas"), novoLancamento);
+                console.warn("Documento de perfil de usuário não encontrado para o UID:", currentUser.uid);
+                setUserProfile(null);
             }
-            fetchLancamentos();
-            handleAddClose();
-            handleEditClose();
-        } catch (e) {
-            console.error("Erro: ", e);
+        } catch (error) {
+            console.error("Erro ao carregar perfil do usuário:", error);
+            setUserProfile(null);
+        } finally {
+            setUserProfileLoading(false);
         }
-    };
+      } else {
+        setUserProfile(null);
+        setUserProfileLoading(false);
+        setLoading(false);
+      }
+    });
 
-    const handleEditClickOpen = (l: Lancamento) => { setLancamentoParaEditar(l); setEditModalOpen(true); };
-    const handleDeleteClickOpen = (l: Lancamento) => { setLancamentoSelecionado(l); setDeleteModalOpen(true); };
-    const handleConfirmDelete = async () => {
-        if (lancamentoSelecionado?.id) {
-            await deleteDoc(doc(db, "financas", lancamentoSelecionado.id));
-            fetchLancamentos();
-        }
-        handleDeleteClose();
-    };
+    return () => unsubscribeAuth();
+  }, []);
 
-    const { totalEntradas, totalSaidas, saldoAtual } = useMemo(() =>
-        lancamentos.reduce((acc, l) => {
-            const v = parseFloat(String(l.valor)) || 0;
-            if (l.tipo === 'entrada') acc.totalEntradas += v;
-            else acc.totalSaidas += v;
-            acc.saldoAtual = acc.totalEntradas - acc.totalSaidas;
-            return acc;
-        }, { totalEntradas: 0, totalSaidas: 0, saldoAtual: 0 }), [lancamentos]);
-
-    const dadosMensais = useMemo(() => {
-        const totais = Array(12).fill(0).map(() => ({ entradas: 0, saidas: 0 }));
-        lancamentos
-            .filter(l => new Date(l.data + 'T00:00:00-03:00').getFullYear() === anoSelecionado)
-            .forEach(l => {
-                const mes = new Date(l.data + 'T00:00:00-03:00').getMonth();
-                const v = parseFloat(String(l.valor)) || 0;
-                if (l.tipo === 'entrada') totais[mes].entradas += v;
-                else totais[mes].saidas += v;
-            });
-        return totais;
-    }, [lancamentos, anoSelecionado]);
-
-    const formatCurrency = (v: number) =>
-        v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-    const getNomeIgreja = (id: string) =>
-        igrejas.find(i => i.id === id)?.nome || 'Desconhecida';
-
-    if (authLoading || !userProfile) {
-        return (
-            <Box
-                sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
-            >
-                <CircularProgress />
-            </Box>
-        );
+  useEffect(() => {
+    if (!user || userProfileLoading || !userProfile || !userProfile.igrejaId) {
+      if (!user && !authLoading) {
+          setLoading(false);
+      }
+      return;
     }
 
-    return (
-        <>
-            <Box className="non-printable" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4">Lançamentos Financeiros</Typography>
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Button
-                        variant="outlined"
-                        color="secondary"
-                        startIcon={<PrintIcon />}
-                        onClick={() => window.print()}
-                    >
-                        Imprimir Relatório
-                    </Button>
-                    <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAddClickOpen}>
-                        Adicionar Lançamento
-                    </Button>
-                </Box>
-            </Box>
+    setLoading(true);
 
-            <Box className="printable-content">
-                <Grid container spacing={3} sx={{ mb: 4 }}>
-                    <Grid item xs={12} sm={4}>
-                        <Paper elevation={3} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#e8f5e9' }}>
-                            <Avatar sx={{ bgcolor: 'success.main' }}><ArrowUpwardIcon /></Avatar>
-                            <Box>
-                                <Typography variant="subtitle1">Entradas</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
-                                    {formatCurrency(totalEntradas)}
-                                </Typography>
-                            </Box>
-                        </Paper>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                        <Paper elevation={3} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#ffebee' }}>
-                            <Avatar sx={{ bgcolor: 'error.main' }}><ArrowDownwardIcon /></Avatar>
-                            <Box>
-                                <Typography variant="subtitle1">Saídas</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'error.dark' }}>
-                                    {formatCurrency(totalSaidas)}
-                                </Typography>
-                            </Box>
-                        </Paper>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                        <Paper elevation={3} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#e3f2fd' }}>
-                            <Avatar sx={{ bgcolor: 'primary.main' }}><AttachMoneyIcon /></Avatar>
-                            <Box>
-                                <Typography variant="subtitle1">Saldo Atual</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 'bold', color: saldoAtual >= 0 ? 'primary.dark' : 'error.main' }}>
-                                    {formatCurrency(saldoAtual)}
-                                </Typography>
-                            </Box>
-                        </Paper>
-                    </Grid>
-                </Grid>
+    const userIgrejaId = userProfile.igrejaId;
 
-                <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-                    <Paper sx={{ p: 2, mt: 4, mb: 4 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Typography variant="h6">Resumo Mensal</Typography>
-                            <FormControl size="small" sx={{ minWidth: 120 }}>
-                                <InputLabel>Ano</InputLabel>
-                                <Select value={anoSelecionado} label="Ano"
-                                    onChange={e => setAnoSelecionado(e.target.value as number)}>
-                                    <MenuItem value={2025}>2025</MenuItem>
-                                    <MenuItem value={2024}>2024</MenuItem>
-                                    <MenuItem value={2023}>2023</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Bar
-                            options={{
-                                responsive: true,
-                                plugins: { legend: { position: 'top' }, title: { display: true, text: `Movimentações de ${anoSelecionado}` } },
-                                scales: {
-                                    y: {
-                                        ticks: {
-                                            callback: v =>
-                                                typeof v === 'number'
-                                                    ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                                                    : ''
-                                        }
-                                    }
-                                }
-                            }}
-                            data={{
-                                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                                datasets: [
-                                    { label: 'Entradas', data: dadosMensais.map(d => d.entradas), backgroundColor: 'rgba(75, 192, 192, 0.5)' },
-                                    { label: 'Saídas', data: dadosMensais.map(d => d.saidas), backgroundColor: 'rgba(255, 99, 132, 0.5)' }
-                                ]
-                            }}
-                        />
-                    </Paper>
-                </Box>
-
-                <Paper sx={{ width: '100%', overflow: 'hidden', mt: 4 }}>
-                    <TableContainer sx={{ maxHeight: 640 }}>
-                        <Table stickyHeader>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Igreja</TableCell>
-                                    <TableCell>Data</TableCell>
-                                    <TableCell>Tipo</TableCell>
-                                    <TableCell>Categoria</TableCell>
-                                    <TableCell>Descrição</TableCell>
-                                    <TableCell align="right">Valor (R$)</TableCell>
-                                    <TableCell align="center">Ações</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow><TableCell colSpan={7} align="center"><CircularProgress /></TableCell></TableRow>
-                                ) : lancamentos.length === 0 ? (
-                                    <TableRow><TableCell colSpan={7} align="center">Nenhum lançamento encontrado.</TableCell></TableRow>
-                                ) : (
-                                    lancamentos.map(lancamento => (
-                                        <TableRow hover key={lancamento.id}>
-                                            <TableCell>{getNomeIgreja(lancamento.igrejaId)}</TableCell>
-                                            <TableCell>
-                                                {new Date(lancamento.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography color={lancamento.tipo === 'entrada' ? 'success.main' : 'error.main'} sx={{ textTransform: 'capitalize' }}>
-                                                    {lancamento.tipo}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell>{lancamento.categoria}</TableCell>
-                                            <TableCell>{lancamento.descricao}</TableCell>
-                                            <TableCell align="right" sx={{ color: lancamento.tipo === 'entrada' ? 'success.main' : 'error.main' }}>
-                                                {formatCurrency(lancamento.valor)}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                <IconButton color="primary" size="small" onClick={() => handleEditClickOpen(lancamento)}>
-                                                    <EditIcon />
-                                                </IconButton>
-                                                <IconButton color="error" size="small" onClick={() => handleDeleteClickOpen(lancamento)}>
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Paper>
-            </Box>
-
-            <div className="non-printable">
-                <Dialog open={isAddModalOpen} onClose={handleAddClose}>
-                    <DialogTitle>Adicionar Lançamento</DialogTitle>
-                    <DialogContent><RenderFormFields data={novoLancamento} handler={handleChange} /></DialogContent>
-                    <DialogActions><Button onClick={handleAddClose}>Cancelar</Button><Button onClick={handleSalvar} variant="contained">Salvar</Button></DialogActions>
-                </Dialog>
-
-                <Dialog open={isEditModalOpen} onClose={handleEditClose}>
-                    <DialogTitle>Editar Lançamento</DialogTitle>
-                    <DialogContent>{lancamentoParaEditar && <RenderFormFields data={lancamentoParaEditar} handler={handleChange} />}</DialogContent>
-                    <DialogActions><Button onClick={handleEditClose}>Cancelar</Button><Button onClick={handleSalvar} variant="contained">Salvar</Button></DialogActions>
-                </Dialog>
-
-                <Dialog open={isDeleteModalOpen} onClose={handleDeleteClose}>
-                    <DialogTitle>Confirmar Exclusão</DialogTitle>
-                    <DialogContent><Typography>Deseja excluir o lançamento <strong>"{lancamentoSelecionado?.descricao}"</strong>?</Typography></DialogContent>
-                    <DialogActions><Button onClick={handleDeleteClose}>Cancelar</Button><Button onClick={handleConfirmDelete} variant="contained" color="error">Excluir</Button></DialogActions>
-                </Dialog>
-            </div>
-        </>
+    const q = query(
+      collection(db, 'financas'),
+      where('igrejaId', '==', userIgrejaId),
+      orderBy('data', 'desc')
     );
+
+    const unsubscribeFinancas = onSnapshot(q, (snapshot) => {
+      const financasData: Lancamento[] = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data() as Omit<Lancamento, 'id'>
+      }));
+      setLancamentos(financasData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Erro ao carregar lançamentos:", error);
+      setLoading(false);
+    });
+
+    const fetchMembros = async () => {
+      try {
+        const membrosCol = collection(db, 'membros');
+        const membroSnapshot = await getDocs(membrosCol);
+        const membrosList: Membro[] = membroSnapshot.docs.map(doc => ({
+          id: doc.id,
+          nome: doc.data().nome,
+        }));
+        setMembros(membrosList);
+      } catch (error) {
+        console.error("Erro ao carregar membros:", error);
+      }
+    };
+    fetchMembros();
+
+    return () => unsubscribeFinancas();
+  }, [user, userProfileLoading, userProfile, authLoading]);
+
+  const totalEntradas = useMemo(() => {
+    return lancamentos.filter(lanc => lanc.tipo === 'entrada').reduce((sum, lanc) => sum + lanc.valor, 0);
+  }, [lancamentos]);
+
+  const totalSaidas = useMemo(() => {
+    return lancamentos.filter(lanc => lanc.tipo === 'saida').reduce((sum, lanc) => sum + lanc.valor, 0);
+  }, [lancamentos]);
+
+  const saldoAtual = useMemo(() => {
+    return totalEntradas - totalSaidas;
+  }, [totalEntradas, totalSaidas]);
+
+  const chartData = useMemo(() => [
+    { name: 'Entradas', value: totalEntradas },
+    { name: 'Saídas', value: totalSaidas },
+  ], [totalEntradas, totalSaidas]);
+
+  const handleSaveLancamento = useCallback(async () => {
+    if (!user || !userProfile || !userProfile.igrejaId) {
+      alert('Você precisa estar logado com um perfil de igreja válido para salvar lançamentos.');
+      return;
+    }
+
+    if (formCategoria === 'Dízimo' && !formMembroId) {
+        alert('Para lançamentos de Dízimo, selecione um membro.');
+        return;
+    }
+    if (!formCategoria || !formDescricao || !formValor || !formTipo) {
+      alert('Preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    const lancamentoDataToSave: { [key: string]: any } = {
+      categoria: formCategoria,
+      data: formData || new Date().toISOString().split('T')[0],
+      descricao: formDescricao,
+      igrejaId: userProfile.igrejaId,
+      tipo: formTipo,
+      valor: parseFloat(formValor),
+    };
+
+    if (formMembroId) {
+      lancamentoDataToSave.membroId = formMembroId;
+      lancamentoDataToSave.membroNome = formMembroNome;
+    }
+
+    try {
+      if (currentLancamento && currentLancamento.id) {
+        const docRef = doc(db, 'financas', currentLancamento.id);
+        await updateDoc(docRef, lancamentoDataToSave);
+      } else {
+        await addDoc(collection(db, 'financas'), lancamentoDataToSave);
+      }
+      setModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error("Erro ao salvar lançamento:", error);
+      alert("Erro ao salvar lançamento. Tente novamente.");
+    }
+  }, [user, userProfile, formTipo, formCategoria, formMembroId, formMembroNome, formData, formDescricao, formValor, currentLancamento, resetForm]);
+
+  const handleEdit = useCallback((lancamento: Lancamento) => {
+    if (!user || !userProfile || !userProfile.igrejaId) {
+      alert('Você precisa estar logado para editar lançamentos.');
+      return;
+    }
+    setCurrentLancamento(lancamento);
+    setFormCategoria(lancamento.categoria);
+    setFormData(lancamento.data);
+    setFormDescricao(lancamento.descricao);
+    setFormTipo(lancamento.tipo);
+    setFormValor(lancamento.valor.toString());
+    setFormMembroId(lancamento.membroId || '');
+    setFormMembroNome(lancamento.membroNome || '');
+    setModalOpen(true);
+  }, [user, userProfile]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    if (!user || !userProfile || !userProfile.igrejaId) {
+      alert('Você precisa estar logado para deletar lançamentos.');
+      return;
+    }
+    const lancamentoToDelete = lancamentos.find(l => l.id === id);
+    if (lancamentoToDelete && lancamentoToDelete.igrejaId !== userProfile.igrejaId) {
+        alert('Você não tem permissão para deletar este lançamento.');
+        return;
+    }
+
+    if (window.confirm('Tem certeza que deseja deletar este lançamento?')) {
+      try {
+        await deleteDoc(doc(db, 'financas', id));
+      } catch (error) {
+        console.error("Erro ao deletar lançamento:", error);
+        alert("Erro ao deletar lançamento. Tente novamente.");
+      }
+    }
+  }, [user, userProfile, lancamentos]);
+
+  const getMonthYearOptions = useMemo(() => {
+    const options: string[] = [];
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-11
+
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(currentYear, currentMonth - i, 1);
+      const year = d.getFullYear();
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      options.push(`${year}-${month}`);
+    }
+    return options.sort((a,b) => b.localeCompare(a));
+  }, []);
+
+// =esversion: 6
+// =================================================================================
+// ==================== FUNÇÃO DE GERAR PDF ====================
+const generatePdfReport = () => {
+  if (!user || !userProfile || !userProfile.igrejaId) {
+    alert('Você precisa estar logado com um perfil de igreja válido para gerar o relatório.');
+    return;
+  }
+
+  const [filterYear, filterMonth] = selectedMonthYear.split('-').map(Number);
+
+  // Filtrar lançamentos do mês selecionado de forma segura
+  const filteredLancamentos = lancamentos
+    .filter(l => {
+      const dataStr = String(l.data ?? '');
+      const [lancYear, lancMonth] = dataStr.split('-').map(Number);
+      return lancYear === filterYear && lancMonth === filterMonth;
+    })
+    .sort((a, b) => String(a.data ?? '').localeCompare(String(b.data ?? '')));
+
+  if (filteredLancamentos.length === 0) {
+    alert(`Não há lançamentos para o mês ${new Date(filterYear, filterMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}.`);
+    return;
+  }
+
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+
+  const totalEntradasFiltrado = filteredLancamentos
+    .filter(l => l.tipo === 'entrada')
+    .reduce((sum, l) => sum + (l.valor ?? 0), 0);
+  const totalSaidasFiltrado = filteredLancamentos
+    .filter(l => l.tipo === 'saida')
+    .reduce((sum, l) => sum + (l.valor ?? 0), 0);
+  const saldoAtualFiltrado = totalEntradasFiltrado - totalSaidasFiltrado;
+
+  // --- Cabeçalho ---
+  const headerHeight = 15;
+  doc.setFillColor(173, 216, 230);
+  doc.rect(0, 0, pageWidth, headerHeight, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Assembléia de Deus Plenitude', pageWidth / 2, headerHeight / 2 + 1, { align: 'center', baseline: 'middle' });
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFont(undefined, 'normal');
+
+  // --- Título ---
+  doc.setFontSize(18);
+  const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const displayMonth = monthNames[filterMonth - 1];
+  doc.text(`Relatório de ${displayMonth} ${filterYear}`, pageWidth / 2, headerHeight + 10, { align: 'center' });
+
+  // --- Tabela ---
+  const tableColumn = ["Data", "Descrição", "Tipo", "Membro", "Categoria", "Valor"];
+  const tableRows = filteredLancamentos.map(lanc => [
+    new Date(String(lanc.data ?? '')).toLocaleDateString('pt-BR'),
+    String(lanc.descricao ?? ''),
+    lanc.tipo === 'entrada' ? 'Entrada' : 'Saída',
+    String(lanc.membroNome ?? ''),
+    String(lanc.categoria ?? ''),
+    `R$ ${(lanc.valor ?? 0).toFixed(2).replace('.', ',')}`
+  ]);
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: headerHeight + 20,
+    theme: 'grid',
+    headStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], fontStyle: 'bold' },
+    columnStyles: { 5: { halign: 'right' } },
+didDrawCell: function(data) {
+  if (data.section !== 'body') return;
+
+  const lancamento = filteredLancamentos[data.row.index];
+  if (!lancamento) return;
+
+  const isValueColumn = data.column.index === 5;
+  const isTypeColumn = data.column.index === 2;
+
+  if (isValueColumn || isTypeColumn) {
+    const fillColor: [number, number, number] = lancamento.tipo === 'entrada'
+      ? [220, 255, 220]
+      : [255, 220, 220];
+    doc.setFillColor(...fillColor);
+    doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+
+    // Garantir que o texto nunca seja undefined
+    const originalText = String(data.cell.text?.[0] ?? '');
+    const textX = data.cell.x + (isValueColumn ? data.cell.width - 2 : 2);
+    const textY = data.cell.y + data.cell.height / 2;
+
+    doc.setTextColor(
+      lancamento.tipo === 'entrada' ? 0 : 220,
+      lancamento.tipo === 'entrada' ? 100 : 20,
+      lancamento.tipo === 'entrada' ? 0 : 60
+    );
+    doc.text(originalText, textX, textY, { baseline: 'middle', align: isValueColumn ? 'right' : 'left' });
+  }
+},
+    didDrawPage: (data) => {
+      doc.setFontSize(10);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Página ${data.pageNumber}`, pageWidth - margin, pageHeight - margin, { align: 'right' });
+    }
+  });
+
+  // --- Resumo ---
+  const tableBottomY = (doc as any).lastAutoTable.finalY;
+  let summaryY = tableBottomY + 15;
+  if (summaryY > pageHeight - 40) { doc.addPage(); summaryY = margin; }
+
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'normal');
+
+  const summaryXLabel = margin;
+  const summaryXValue = pageWidth - margin;
+
+  doc.setTextColor(50, 50, 50);
+  doc.text("Valor total que entrou:", summaryXLabel, summaryY);
+  doc.setTextColor(0, 128, 0);
+  doc.text(`R$ ${totalEntradasFiltrado.toFixed(2).replace('.', ',')}`, summaryXValue, summaryY, { align: 'right' });
+  summaryY += 8;
+
+  doc.setTextColor(50, 50, 50);
+  doc.text("Valor total que saiu:", summaryXLabel, summaryY);
+  doc.setTextColor(220, 0, 0);
+  doc.text(`R$ ${totalSaidasFiltrado.toFixed(2).replace('.', ',')}`, summaryXValue, summaryY, { align: 'right' });
+  summaryY += 8;
+
+  doc.setDrawColor(180, 180, 180);
+  doc.line(margin, summaryY, pageWidth - margin, summaryY);
+  summaryY += 8;
+
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(50, 50, 50);
+  doc.text("Saldo (Valor total que sobrou):", summaryXLabel, summaryY);
+  doc.setTextColor(saldoAtualFiltrado >= 0 ? 0 : 220, saldoAtualFiltrado >= 0 ? 128 : 0, 0);
+  doc.text(`R$ ${saldoAtualFiltrado.toFixed(2).replace('.', ',')}`, summaryXValue, summaryY, { align: 'right' });
+
+  doc.save(`relatorio_financas_${selectedMonthYear}.pdf`);
+};
+
+
+  if (authLoading || userProfileLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>
+          {authLoading ? 'Verificando autenticação...' : 'Carregando perfil do usuário...'}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Alert severity="error">Você precisa estar logado para acessar esta página.</Alert>
+        <Button component={Link} href="/login" variant="contained" sx={{ mt: 2 }}>
+          Fazer Login
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!userProfile || !userProfile.igrejaId) {
+    return (
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Alert severity="error">
+                Perfil de usuário incompleto. Não foi possível determinar o ID da igreja.
+            </Alert>
+            <Typography variant="body2" sx={{ mt: 2 }}>
+                Por favor, verifique se seu usuário tem um documento na coleção 'users' com um campo 'igrejaId'.
+            </Typography>
+            <Button component={Link} href="/logout" variant="contained" sx={{ mt: 2 }}>
+                Tentar Sair e Entrar Novamente
+            </Button>
+        </Box>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Carregando dados financeiros da igreja "{userProfile.igrejaId}"...</Typography>
+      </Box>
+    );
+  }
+
+  const totalGeral = totalEntradas + totalSaidas;
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Lançamentos Financeiros da Igreja: {userProfile.igrejaId}
+      </Typography>
+
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => { resetForm(); setModalOpen(true); }}
+        >
+          Adicionar Lançamento
+        </Button>
+
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel id="select-month-year-label">Mês/Ano Relatório</InputLabel>
+          <Select
+            labelId="select-month-year-label"
+            value={selectedMonthYear}
+            label="Mês/Ano Relatório"
+            onChange={(e) => setSelectedMonthYear(e.target.value)}
+          >
+            {getMonthYearOptions.map((option) => (
+              <MenuItem key={option} value={option}>
+                {new Date(option + '-02T00:00:00Z').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<PrintIcon />}
+          onClick={generatePdfReport}
+        >
+          Gerar Relatório PDF
+        </Button>
+      </Box>
+
+      <Paper elevation={3} sx={{ p: 2, mb: 3, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6">Entradas</Typography>
+          <Typography variant="h5" color="success.main">R$ {totalEntradas.toFixed(2).replace('.', ',')}</Typography>
+        </Box>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6">Saídas</Typography>
+          <Typography variant="h5" color="error.main">R$ {totalSaidas.toFixed(2).replace('.', ',')}</Typography>
+        </Box>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6">Saldo Atual</Typography>
+          <Typography variant="h4" color={saldoAtual >= 0 ? 'primary.main' : 'error.main'}>
+            R$ {saldoAtual.toFixed(2).replace('.', ',')}
+          </Typography>
+        </Box>
+      </Paper>
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Data</TableCell>
+              <TableCell>Descrição</TableCell>
+              <TableCell>Tipo</TableCell>
+              <TableCell>Categoria</TableCell>
+              <TableCell>Membro</TableCell>
+              <TableCell align="right">Valor (R$)</TableCell>
+              <TableCell align="center">Ações</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {lancamentos.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  Nenhum lançamento encontrado.
+                </TableCell>
+              </TableRow>
+            ) : (
+              lancamentos.map((lanc) => (
+                <TableRow key={lanc.id}>
+                  <TableCell>{new Date(lanc.data + 'T12:00:00Z').toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell>{lanc.descricao}</TableCell>
+                  <TableCell sx={{ color: lanc.tipo === 'entrada' ? 'success.main' : 'error.main' }}>
+                    {lanc.tipo === 'entrada' ? 'Entrada' : 'Saída'}
+                  </TableCell>
+                  <TableCell>{lanc.categoria}</TableCell>
+                  <TableCell>{lanc.membroNome || '-'}</TableCell>
+                  <TableCell align="right">R$ {lanc.valor.toFixed(2).replace('.', ',')}</TableCell>
+                  <TableCell align="center">
+                    <IconButton color="primary" onClick={() => handleEdit(lanc)}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton color="error" onClick={() => lanc.id && handleDelete(lanc.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      
+<Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md" fullWidth>
+  <DialogTitle>{currentLancamento ? 'Editar Lançamento' : 'Adicionar Novo Lançamento'}</DialogTitle>
+  <DialogContent>
+    <Grid container spacing={2}>
+      <Grid item xs={12} md={6}>
+        {/* ID da Igreja */}
+        <TextField
+          margin="dense"
+          label="ID da Igreja"
+          type="text"
+          fullWidth
+          value={userProfile?.igrejaId || ''}
+          InputProps={{ readOnly: true }}
+        />
+
+        {/* Tipo de lançamento */}
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="tipo-lancamento-label">Tipo</InputLabel>
+          <Select
+            labelId="tipo-lancamento-label"
+            value={formTipo}
+            onChange={(e) => setFormTipo(e.target.value as 'entrada' | 'saida')}
+          >
+            <MenuItem value="entrada">Entrada</MenuItem>
+            <MenuItem value="saida">Saída</MenuItem>
+          </Select>
+        </FormControl>
+
+        {/* Categoria */}
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="categoria-select-label">Categoria</InputLabel>
+          <Select
+            labelId="categoria-select-label"
+            value={formCategoria}
+            onChange={(e) => setFormCategoria(e.target.value)}
+          >
+            <MenuItem value=""><em>Nenhuma</em></MenuItem>
+            {CATEGORY_OPTIONS.map(option => (
+              <MenuItem key={option} value={option}>{option}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Membro (obrigatório para Dízimo, opcional para outros) */}
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="membro-select-label">
+            {formCategoria === 'Dízimo' ? 'Membro (obrigatório)' : 'Membro (opcional)'}
+          </InputLabel>
+          <Select
+            labelId="membro-select-label"
+            value={formMembroId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setFormMembroId(id);
+              const membro = membros.find(m => m.id === id);
+              setFormMembroNome(membro?.nome || '');
+            }}
+          >
+            <MenuItem value=""><em>Nenhum</em></MenuItem>
+            {membros.map(m => <MenuItem key={m.id} value={m.id}>{m.nome}</MenuItem>)}
+          </Select>
+        </FormControl>
+
+        {/* Descrição, Valor e Data */}
+        <TextField
+          margin="dense"
+          label="Descrição"
+          type="text"
+          fullWidth
+          value={formDescricao}
+          onChange={(e) => setFormDescricao(e.target.value)}
+        />
+        <TextField
+          margin="dense"
+          label="Valor"
+          type="number"
+          fullWidth
+          value={formValor}
+          onChange={(e) => setFormValor(e.target.value)}
+          inputProps={{ step: "0.01" }}
+        />
+        <TextField
+          margin="dense"
+          label="Data"
+          type="date"
+          fullWidth
+          value={formData}
+          onChange={(e) => setFormData(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Distribuição Financeira</Typography>
+        {totalGeral === 0 ? (
+          <Box sx={{
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            height: 250, border: '1px dashed grey', borderRadius: 1
+          }}>
+            <Typography variant="body2" color="text.secondary">
+              Sem dados para o gráfico. Adicione lançamentos.
+            </Typography>
+          </Box>
+        ) : (
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                dataKey="value"
+                label={({ name, value }) => {
+                  const percent = totalGeral ? ((value as number) / totalGeral * 100).toFixed(0) : 0;
+                  return `${name}: ${percent}%`;
+                }}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value: string | number) => `R$ ${(parseFloat(value.toString())).toFixed(2).replace('.', ',')}`} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
+      </Grid>
+    </Grid>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setModalOpen(false)}>Cancelar</Button>
+    <Button onClick={handleSaveLancamento} color="primary" variant="contained">
+      {currentLancamento ? 'Salvar Alterações' : 'Adicionar'}
+    </Button>
+  </DialogActions>
+</Dialog>
+
+    </Box>
+  );
 }

@@ -118,21 +118,43 @@ export default function PaginaSlides() {
                     primary={slideshow.title} 
                     secondary={`Criado em: ${slideshow.createdAt.toDate().toLocaleDateString('pt-BR')}`} 
                   />
-                  <ListItemSecondaryAction>
-                    <Link href={`/admin/slides/${slideshow.id}`} passHref>
-                      <IconButton edge="end" aria-label="edit" title="Editar Slides">
-                        <EditIcon />
-                      </IconButton>
-                    </Link>
-                    <Link href={`/apresentacao/${slideshow.id}`} passHref>
-                        <IconButton edge="end" aria-label="present" title="Apresentar" target="_blank" sx={{ ml: 1 }}>
-                            <SlideshowIcon />
-                        </IconButton>
-                    </Link>
-                    <IconButton edge="end" aria-label="delete" title="Excluir Apresentação" sx={{ ml: 1 }} onClick={() => handleOpenDeleteModal(slideshow)}>
-                      <DeleteIcon color="error" />
-                    </IconButton>
-                  </ListItemSecondaryAction>
+<ListItemSecondaryAction>
+  {/* Corrected Edit Button */}
+  <IconButton
+    component={Link}
+    href={`/admin/slides/${slideshow.id}`}
+    edge="end"
+    aria-label="edit"
+    title="Editar Slides"
+  >
+    <EditIcon />
+  </IconButton>
+
+  {/* Corrected Present Button */}
+  <IconButton
+    component={Link}
+    href={`/apresentacao/${slideshow.id}`}
+    target="_blank"
+    rel="noopener noreferrer" // Good practice for security with target="_blank"
+    edge="end"
+    aria-label="present"
+    title="Apresentar"
+    sx={{ ml: 1 }}
+  >
+    <SlideshowIcon />
+  </IconButton>
+  
+  {/* Unchanged Delete Button */}
+  <IconButton
+    edge="end"
+    aria-label="delete"
+    title="Excluir Apresentação"
+    sx={{ ml: 1 }}
+    onClick={() => handleOpenDeleteModal(slideshow)}
+  >
+    <DeleteIcon color="error" />
+  </IconButton>
+</ListItemSecondaryAction>
                 </ListItem>
                 {index < slideshows.length - 1 && <Divider />}
               </React.Fragment>
