@@ -1,17 +1,22 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
+// Link não está sendo usado, pode ser removido
+// import Link from 'next/link'; 
 import { Button } from '@mui/material';
-
-// ✅ Importe a interface BibleBook do seu arquivo de definição
 import { BibleBook } from '@/lib/bible';
 
-// ✅ Interface Props para este componente
+// --- 1. Definição de Tipos e Props Corrigida ---
+// Este é o formato que o componente PAI espera
+interface VersePayload {
+  title: string;
+  content: string;
+}
+
 interface BiblePageClientProps {
   allBooks: BibleBook[];
-  // O tipo de 'onVerseSelect' agora está correto, a implementação é que muda
-  onVerseSelect: (verse: { book: string; chapter: number; verse: number; content: string }) => void;
+  // ✅ CORRIGIDO: A prop agora espera o formato correto { title, content }
+  onVerseSelect: (verse: VersePayload) => void;
 }
 
 
@@ -23,8 +28,6 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageCl
   const antigoTestamento = allBooks.filter(b => b.periodo?.includes('Antigo'));
   const novoTestamento = allBooks.filter(b => b.periodo?.includes('Novo'));
 
-
-  // Funções para controlar a navegação
   const handleBookClick = (book: BibleBook) => {
     setSelectedBook(book);
     setView('chapters');
@@ -35,39 +38,37 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageCl
     setView('verses');
   };
 
+  // --- 2. Lógica de Seleção do Versículo Corrigida ---
   const handleVerseClick = (verseNumber: number) => {
     if (selectedBook && selectedChapterNum !== null) {
-      // ✅ CORREÇÃO AQUI: Acessando diretamente o texto do versículo.
-      // selectedBook.capitulos[selectedChapterNum - 1] é o array de strings de versículos para o capítulo.
-      // [verseNumber - 1] é o índice do versículo dentro desse array.
       const chapterVerses: string[] = selectedBook.capitulos[selectedChapterNum - 1];
-      const verseContent = chapterVerses[verseNumber - 1]; // Obtém a string do versículo
+      const verseContent = chapterVerses[verseNumber - 1];
 
-      if (verseContent !== undefined) { // ✅ Garante que o versículo existe nesse índice
+      if (verseContent !== undefined) {
+        // ✅ CRIA o título no formato "Livro Capítulo:Versículo"
+        const title = `${selectedBook.nome} ${selectedChapterNum}:${verseNumber}`;
+
+        // ✅ ENVIA o objeto no formato correto { title, content }
         onVerseSelect({
-          book: selectedBook.nome, // Ou selectedBook.abrev, como você preferir
-          chapter: selectedChapterNum,
-          verse: verseNumber,
-          content: verseContent // ✅ Passa o conteúdo do versículo diretamente
+          title: title,
+          content: verseContent
         });
         
-        const path = `/apresentacao/biblia/${selectedBook.abrev}/${selectedChapterNum}/${verseNumber}`;
-        window.open(path, '_blank');
+        // ✅ REMOVIDO: A linha window.open(...) foi retirada para
+        // manter a responsabilidade única de apenas selecionar o versículo para a playlist.
+        // const path = `/apresentacao/biblia/${selectedBook.abrev}/${selectedChapterNum}/${verseNumber}`;
+        // window.open(path, '_blank');
       } else {
         console.error("Versículo não encontrado para o índice fornecido.");
       }
     }
   };
 
-  // --- Renderização Condicional ---
+  // --- Renderização Condicional (seu código aqui já estava ótimo) ---
 
-  // Visualização de VERSÍCULOS
   if (view === 'verses' && selectedBook && selectedChapterNum !== null) {
-    // ✅ CORREÇÃO AQUI: 'capitulos' já é um array de arrays de strings.
-    // selectedBook.capitulos[selectedChapterNum - 1] é o array de strings para o capítulo.
     const chapterVersesStrings: string[] = selectedBook.capitulos[selectedChapterNum - 1] || [];
-    const totalVerses = chapterVersesStrings.length;
-    const verseNumbers = Array.from({ length: totalVerses }, (_, i) => i + 1); // Gerar números de 1 ao total de versículos
+    const verseNumbers = Array.from({ length: chapterVersesStrings.length }, (_, i) => i + 1);
 
     return (
       <div className="bible-navigation-container">
@@ -75,9 +76,9 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageCl
           &larr; Voltar para Capítulos
         </Button>
         <h2>{selectedBook.nome} {selectedChapterNum}</h2>
-        <p>Selecione um versículo para iniciar a apresentação:</p>
+        <p>Selecione um versículo para adicionar à playlist:</p>
         <div className="verse-grid">
-          {verseNumbers.map((verseNumber) => ( // ✅ Iterar sobre os números de versículos gerados
+          {verseNumbers.map((verseNumber) => (
             <Button
               key={verseNumber}
               onClick={() => handleVerseClick(verseNumber)}
@@ -93,9 +94,7 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageCl
     );
   }
 
-  // Visualização de CAPÍTULOS
   if (view === 'chapters' && selectedBook) {
-    // ✅ CORREÇÃO AQUI: O número de capítulos é o length do array 'capitulos'
     const totalChapters = selectedBook.capitulos.length;
     const chapterNumbers = Array.from({ length: totalChapters }, (_, i) => i + 1);
 
@@ -123,7 +122,6 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageCl
     );
   }
 
-  // Visualização de LIVROS (Padrão)
   return (
     <div className="bible-navigation-container">
       <div className="testament-section">
@@ -142,7 +140,6 @@ export default function BiblePageClient({ allBooks, onVerseSelect }: BiblePageCl
           ))}
         </div>
       </div>
-
       <div className="testament-section">
         <h2>Novo Testamento</h2>
         <div className="bible-book-grid">
