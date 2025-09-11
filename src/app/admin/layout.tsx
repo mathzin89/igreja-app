@@ -56,12 +56,18 @@ export default function AppLayout({
     }
   };
 
-  const getPageTitle = () => {
-    // Procura o item correspondente na lista, incluindo a nova página de slides
-    const currentItem = menuItems.find(item => pathname.startsWith(item.path) && (item.path !== '/admin' || pathname === '/admin'));
-    if (pathname.includes('/admin/slides/')) return 'Editar Slides'; // Título para a página de edição
-    return currentItem ? currentItem.text : 'Painel Administrativo';
-  };
+// Depois
+const getPageTitle = () => {
+  // 1. Adicione esta verificação no início
+  if (!pathname) {
+    return 'Painel Administrativo'; // Retorna um título padrão se pathname for nulo
+  }
+
+  // 2. O resto do seu código agora é seguro
+  const currentItem = menuItems.find(item => pathname.startsWith(item.path) && (item.path !== '/admin' || pathname === '/admin'));
+  if (pathname.includes('/admin/slides/')) return 'Editar Slides';
+  return currentItem ? currentItem.text : 'Painel Administrativo';
+};
 
   if (loading || !user) {
     return (
