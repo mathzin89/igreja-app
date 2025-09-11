@@ -43,7 +43,7 @@ const horariosFixos = [
   {
     titulo: "Culto de Santa Ceia",
     dia: "Todo 1° Primeiro Sábado do Mês",
-    horario: "19:",
+    horario: "19:00",
     icon: <MenuBookIcon sx={{ fontSize: 32 }} />
   },
   {

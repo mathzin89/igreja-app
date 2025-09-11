@@ -102,9 +102,6 @@ export default function RootLayout({
                         <Tooltip title="Sobre Nós">
                           <LinkIconButton href="/sobre-nos" title="Sobre Nós"><PeopleIcon /></LinkIconButton>
                         </Tooltip>
-                        <Tooltip title="Ministérios">
-                          <LinkIconButton href="/ministerios" title="Ministérios"><GroupsIcon /></LinkIconButton>
-                        </Tooltip>
                         <Tooltip title="Eventos">
                           <LinkIconButton href="/eventos" title="Eventos"><EventIcon /></LinkIconButton>
                         </Tooltip>
