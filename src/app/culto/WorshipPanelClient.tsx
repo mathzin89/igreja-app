@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { BibleBook } from "@/lib/bible";
 import HymnListPageClient from "../harpa/HymnListPageClient";
 import BiblePageClient from "../biblia/BiblePageClient";
-import { doc, setDoc } from "firebase/firestore"; // ✅ Para o controle em tempo real
-import { db } from "../../firebase/config"; // ✅ Verifique se o caminho está correto
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../../firebase/config";
 
 // MUI para a nova interface
 import { Paper, Box, Typography, List, ListItem, ListItemText, IconButton, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
@@ -27,42 +27,54 @@ const estadoInicialSlideCustomizado = {
   content: "",
 };
 
-// Tipos para os parâmetros das funções
 type Hymn = { title: string; content: string };
 type Verse = { title: string; content: string };
 
-// Definindo as propriedades para o componente
+// --- ✅ CORREÇÃO 1: SIMPLIFICAR AS PROPS ---
+// O componente agora só precisa receber a lista de livros.
+// As funções onHymnSelect e onVerseSelect foram removidas daqui.
 type Props = {
   allBooks: BibleBook[];
-  onHymnSelect: (hino: Hymn) => void;  // Tipando corretamente a função de seleção de hino
-  onVerseSelect: (verso: Verse) => void;  // Tipando corretamente a função de seleção de versículo
 };
 
-export default function WorshipPanelClient({ allBooks, onHymnSelect, onVerseSelect }: Props) {
+export default function WorshipPanelClient({ allBooks }: Props) {
   const [activeTab, setActiveTab] = useState<'harpa' | 'biblia'>('harpa');
   const [playlist, setPlaylist] = useState<Slide[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(-1);
   const [isLive, setIsLive] = useState(false);
-
-  // Estados para o modal de slide customizado
   const [customSlideModalOpen, setCustomSlideModalOpen] = useState(false);
   const [customSlideData, setCustomSlideData] = useState(estadoInicialSlideCustomizado);
 
-  // --- EFEITO PARA ATUALIZAR O FIREBASE EM TEMPO REAL ---
   useEffect(() => {
     if (isLive && currentSlideIndex >= 0 && playlist[currentSlideIndex]) {
       const currentSlide = playlist[currentSlideIndex];
-      // Atualiza o Firebase
       setDoc(doc(db, "presenting", "liveState"), { currentSlide });
     } else if (isLive && currentSlideIndex === -1) {
       setDoc(doc(db, "presenting", "liveState"), { currentSlide: null });
     }
   }, [currentSlideIndex, isLive, playlist]);
 
-  // Função para adicionar slide na playlist
   const handleAddToPlaylist = (item: { type: 'letra' | 'biblia' | 'aviso', title: string, content: string }) => {
     const newSlide: Slide = { id: new Date().toISOString(), ...item };
     setPlaylist(prev => [...prev, newSlide]);
+  };
+
+  // --- ✅ CORREÇÃO 2: LÓGICA DE SELEÇÃO DENTRO DO COMPONENTE ---
+  // Estas funções agora vivem aqui e chamam handleAddToPlaylist.
+  const handleHymnSelect = (hino: Hymn) => {
+    handleAddToPlaylist({
+      type: 'letra',
+      title: hino.title,
+      content: hino.content,
+    });
+  };
+
+  const handleVerseSelect = (verso: Verse) => {
+    handleAddToPlaylist({
+      type: 'biblia',
+      title: verso.title,
+      content: verso.content,
+    });
   };
 
   const handleAddCustomSlide = () => {
@@ -112,13 +124,41 @@ export default function WorshipPanelClient({ allBooks, onHymnSelect, onVerseSele
         </div>
         <div className="tab-content">
           {activeTab === 'harpa' && (
-            <HymnListPageClient hideTitle={true} onHymnSelect={hino => onHymnSelect(hino)} />
+            // --- ✅ CORREÇÃO 3: PASSANDO A FUNÇÃO CORRETA ---
+            // Agora passamos a função 'handleHymnSelect' que criamos aqui dentro.
+            <HymnListPageClient hideTitle={true} onHymnSelect={handleHymnSelect} />
           )}
           {activeTab === 'biblia' && (
-            <BiblePageClient allBooks={allBooks} onVerseSelect={verso => onVerseSelect(verso)} />
+            // --- ✅ CORREÇÃO 4: PASSANDO A FUNÇÃO CORRETA ---
+            // E aqui passamos a função 'handleVerseSelect'.
+            <BiblePageClient allBooks={allBooks} onVerseSelect={handleVerseSelect} />
           )}
         </div>
       </div>
+      
+      {/* Você pode adicionar a UI da playlist e dos controles aqui */}
+      {/* Exemplo: */}
+      {/*
+      <div className="playlist-manager">
+        <h2>Playlist</h2>
+        <List>
+          {playlist.map(slide => (
+            <ListItem key={slide.id}>
+              <ListItemText primary={slide.title} />
+              <IconButton onClick={() => handleRemoveFromPlaylist(slide.id)}>
+                <DeleteIcon />
+              </IconButton>
+            </ListItem>
+          ))}
+        </List>
+        <div className="presentation-controls">
+           <Button onClick={handleStartPresentation}>Iniciar</Button>
+           <Button onClick={handleStopPresentation}>Parar</Button>
+           <Button onClick={handlePrevSlide}>Anterior</Button>
+           <Button onClick={handleNextSlide}>Próximo</Button>
+        </div>
+      </div>
+      */}
     </div>
   );
 }
