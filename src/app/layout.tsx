@@ -84,7 +84,6 @@ export default function RootLayout({
                         <Button color="inherit" sx={{ color: '#333', fontWeight: 600 }} component={Link} href="/">Início</Button>
                         <Button color="inherit" sx={{ color: '#333', fontWeight: 600 }} component={Link} href="/culto">Painel de Culto</Button>
                         <Button color="inherit" sx={{ color: '#333', fontWeight: 600 }} component={Link} href="/sobre-nos">Sobre Nós</Button>
-                        <Button color="inherit" sx={{ color: '#333', fontWeight: 600 }} component={Link} href="/eventos">Eventos</Button>
                         <Button color="inherit" sx={{ color: '#333', fontWeight: 600 }} component={Link} href="/contato">Contato</Button>
                         <Button variant="contained" color="primary" component={Link} href="/login" sx={{ ml: 2, borderRadius: '20px' }}>
                           Acesso Restrito

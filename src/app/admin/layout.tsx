@@ -108,7 +108,7 @@ const getPageTitle = () => {
       >
         <Toolbar sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
             <Typography variant="h5" sx={{fontWeight: 'bold', color: 'white'}}>
-                Igreja App
+                AD Plenitude
             </Typography>
         </Toolbar>
         <List>

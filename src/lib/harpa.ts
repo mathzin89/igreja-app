@@ -1,5 +1,6 @@
 import hymnsData from '@/data/harpa.json';
 
+// Interfaces (sem alteração)
 export interface Hymn {
   id: number;
   title: string;
@@ -19,20 +20,32 @@ export async function getHymnById(id: number): Promise<Hymn | undefined> {
     return undefined;
   }
 
-  const estrofes: string[][] = [];
-
-  if (rawHymn.verses) {
-    Object.values<string>(rawHymn.verses).forEach(verseText => {
-      // ✅ CORREÇÃO APLICADA AQUI
-      const lines = verseText.split('<br>').map((line: string) => line.trim());
-      estrofes.push(lines);
-    });
+  // --- ✅ LÓGICA DE INTERCALAÇÃO DO CORO ---
+  
+  // 1. Prepara a estrofe do coro primeiro.
+  let chorusStanza: string[] | null = null;
+  if (rawHymn.coro && rawHymn.coro.trim() !== "") {
+    // Adiciona uma marcação "[Coro]" para clareza na apresentação
+    const chorusText = "[Coro]\n" + rawHymn.coro.replace(/<br>/g, '\n');
+    chorusStanza = chorusText.split('\n').map((line: string) => line.trim());
   }
 
-  if (rawHymn.coro && rawHymn.coro.trim() !== "") {
-    // ✅ E AQUI TAMBÉM
-    const lines = rawHymn.coro.split('<br>').map((line: string) => line.trim());
-    estrofes.push(lines);
+  const estrofes: string[][] = [];
+
+  // 2. Itera sobre os versos e intercala o coro.
+  if (rawHymn.verses) {
+    const verseEntries = Object.values<string>(rawHymn.verses);
+    
+    verseEntries.forEach((verseText, index) => {
+      // Adiciona a estrofe do verso atual
+      const verseLines = verseText.replace(/<br>/g, '\n').split('\n').map((line: string) => line.trim());
+      estrofes.push(verseLines);
+      
+      // Adiciona o coro logo em seguida, se ele existir
+      if (chorusStanza) {
+        estrofes.push(chorusStanza);
+      }
+    });
   }
 
   const hymn: Hymn = {
