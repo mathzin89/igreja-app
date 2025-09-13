@@ -98,7 +98,9 @@ export default function HomePage() {
   };
 
   return (
+    
     <Box>
+      
       {/* SECÇÃO DE BOAS-VINDAS (HERO) */}
       <Box 
         sx={{ 
@@ -110,15 +112,16 @@ export default function HomePage() {
         }}
       >
         {/* ... (código da seção de boas-vindas que você já tem) ... */}
+        
         <Container maxWidth="md">
-          <Box sx={{ mb: 4 }}>
+  <Box sx={{ mb: 4, maxWidth: { xs: '200px', sm: '300px' }, mx: 'auto' }}> {/* Adicionado maxWidth responsivo para o Box que contém a imagem */}
             <Image
               src="https://firebasestorage.googleapis.com/v0/b/site-ad-plenitude.firebasestorage.app/o/logo-plenitude.png?alt=media&token=1a61b486-b9a6-49ab-bfc1-56140700f9cb"
               alt="Logo AD Plenitude"
               width={300}
               height={85}
-              style={{ objectFit: 'contain' }}
-              priority
+      style={{ objectFit: 'contain', width: '100%', height: 'auto' }} // Garantir que a imagem ocupe 100% da largura do seu Box pai e ajuste a altura
+      priority
             />
           </Box>
           <Typography 
@@ -160,10 +163,10 @@ export default function HomePage() {
         ) : eventos.length === 0 ? (
           <Typography align="center" color="text.secondary" variant="h6" sx={{py: 5}}>Nenhum evento especial agendado no momento.</Typography>
         ) : (
-          <Grid container spacing={4} justifyContent="center">
-            {eventos.map((evento) => (
-              <Grid item xs={12} sm={8} md={4} key={evento.id}>
-                <Card className="home-event-card">
+<Grid container spacing={4} justifyContent="center">
+  {eventos.map((evento) => (
+    <Grid item xs={12} sm={6} md={4} key={evento.id}> {/* xs=12 (celular), sm=6 (tablet), md=4 (desktop) */}
+      <Card className="home-event-card">
                   <CardContent>
                     <Typography variant="h6" component="div" gutterBottom sx={{fontWeight: 600}}>{evento.titulo}</Typography>
                     <Box display="flex" alignItems="center" mb={1} color="text.secondary">

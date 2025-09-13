@@ -364,3 +364,29 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 50%;
   color: #1976d2; /* Cor do ícone */
 }
+/* src/app/globals.css */
+
+.hero-button {
+  /* Estilos padrão (mobile-first) */
+  padding: 12px 24px;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 600px) { /* Para telas maiores que 600px (sm e acima) */
+  .hero-button {
+    padding: 16px 32px;
+    font-size: 1rem;
+  }
+}
+
+.schedule-card {
+    text-align: center;
+    padding: 24px;
+    transition: transform 0.2s; /* Exemplo de transição */
+}
+
+@media (max-width: 599px) { /* Para telas menores que 600px (apenas xs) */
+    .schedule-card {
+        padding: 16px; /* Menor padding no celular */
+    }
+}
