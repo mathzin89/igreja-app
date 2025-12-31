@@ -1,0 +1,50 @@
+[
+  {
+    "id": "Abertura Principal",
+    "title": "Abertura Principal",
+    "type": "image-slide",
+    "imageUrl": "/slides-pre-prontos/A-Principal.png",
+    "content": "Slide de Abertura Principal"
+  },
+  {
+    "id": "culto-ceia",
+    "title": "Culto-Ceia",
+    "type": "image-slide",
+    "imageUrl": "/slides-pre-prontos/Culto-Ceia.jpg",
+    "content": "Slide do Culto da Ceia"
+  },
+  {
+    "id": "culto-familia",
+    "title": "Culto-Família",
+    "type": "image-slide",
+    "imageUrl": "/slides-pre-prontos/Culto-Familia.jpg",
+    "content": "Slide do Culto da Família"
+  },
+  {
+    "id": "culto-irmas",
+    "title": "Culto-Irmãs",
+    "type": "image-slide",
+    "imageUrl": "/slides-pre-prontos/Culto-Irmãs.jpg",
+    "content": "Slide do Culto dos Irmãs"
+  },
+  {
+    "id": "culto-missoes",
+    "title": "Culto-Missões",
+    "type": "image-slide",
+    "imageUrl": "/slides-pre-prontos/Culto-Missoes.jpg",
+    "content": "Slide do Culto de Missões"
+  },
+  {
+    "id": "pix-dizimo",
+    "title": "Pix-Dízimo",
+    "type": "image-slide",
+    "imageUrl": "/slides-pre-prontos/Pix-Dizimo.jpg",
+    "content": "Slide de Oferta e Dízimos via Pix"
+  },
+{
+    "id": "avisos-gerais",
+    "title": "Avisos Importantes",
+    "type": "text-slide",
+    "content": "• Reunião de oração: Quartas, 19h30\n• Estudo Bíblico: Sextas, 20h\n• Culto de Jovens: Próximo Sábado"
+  }
+]

@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // --- FUNÇÃO AUXILIAR: Verifica se o usuário é AUTENTICADO ---
+    // Permite que usuários logados interajam.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // --- PASTA: carousel ---
+    // Leitura pública. Escrita e deleção permitida APENAS para usuários autenticados.
+    match /carousel/{imageId} {
+      allow read: if true; // Qualquer pessoa pode baixar (ler) as imagens para a homepage
+      allow write, delete: if isAuthenticated(); // Apenas usuários LOGADOS podem escrever/deletar
+    }
+
+    // --- Regra Catch-all (Nega acesso por padrão a outras pastas não especificadas) ---
+    // Isso impede uploads não autorizados em outras pastas do Storage.
+    match /{allPaths=**} {
+      allow read, write: if false; // Nega acesso a todas as outras pastas não explicitamente permitidas acima
+    }
+  }
+}
